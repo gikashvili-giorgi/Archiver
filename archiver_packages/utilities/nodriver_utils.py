@@ -29,6 +29,22 @@ async def nodriver_setup(profile:str):
     return driver
 
 
+async def split_window_size(tab:uc.Tab,delay:Callable[[int],float]):
+    await tab.set_window_size(top=1, left=1)
+    sleep(delay())
+
+
+async def get_nodriver_tab(driver,url:str,delay:Callable[[int],float],add_tab_delay:int=5,split_tabs:bool=False) -> uc.Tab:
+
+    tab = await driver.get(url)
+    sleep(delay()+add_tab_delay)
+
+    if split_tabs:
+        await split_window_size(tab,delay)
+
+    return tab
+
+
 async def page_scroll(tab,delay:Callable[[int],float],add_delay:int=0,end_key:bool=False) -> str|None:
     '''Scroll the webpage. return str if reached to the bottom'''
 

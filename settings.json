@@ -1,11 +1,11 @@
 {
     "youtube": {
         "save_comments": true,
-        "max_comments": 1000
+        "max_comments": 2
     },
     "extra": {
         "delay": 1,
         "headless": false,
-        "split_tabs": false
+        "split_tabs": true
     }
 }

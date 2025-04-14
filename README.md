@@ -54,4 +54,4 @@ If you're on Windows, you can use the `start.cmd` script for an easy launch.
 ## Credits
 big thanks to @virag-ky for [this](https://github.com/virag-ky/Youtube-Clone) awesome html/css  
 
-For help contact @`zg4rbu#8684` (Discord)
+For help contact @`gikashvili` (Discord)

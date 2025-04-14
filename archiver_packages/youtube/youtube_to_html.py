@@ -71,7 +71,7 @@ def get_html_output_dir(video_id:str,root_directory:str) -> str:
             return dir
 
 
-async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],info_list:list[dict],driver,delay:Callable[[int],float],save_comments:bool,max_comments:int,test_code:bool=False):
+async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],info_list:list[dict],driver,delay:Callable[[int],float],save_comments:bool,max_comments:int,split_tabs:bool,test_code:bool=False):
 
     for (yt_url,file,info) in zip(yt_urls,files,info_list):
 
@@ -108,7 +108,7 @@ async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],i
             output = open(f"./{output_directory}/{html_output_dir}/{html_output_dir}.html", 'wt', encoding="utf8")
 
         # Scrape additional info
-        tab, profile_image = await scrape_info(driver,yt_url,delay)
+        tab, profile_image = await scrape_info(driver,yt_url,delay,split_tabs)
 
         for line in input:
             output.write(

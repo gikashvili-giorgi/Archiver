@@ -1,14 +1,22 @@
 from selectolax.parser import HTMLParser
 from time import sleep
 from archiver_packages.utilities.selenium_utils import slow_croll
+from archiver_packages.utilities.nodriver_utils import get_nodriver_tab
 from archiver_packages.utilities.file_utils import download_file
 from typing import Callable
 
 
 
-async def scrape_info(driver,yt_link:str,delay:Callable[[int],float]) -> str:
+async def scrape_info(driver,yt_link:str,delay:Callable[[int],float],split_tabs:bool) -> str:
 
-    tab = await driver.get(yt_link)
+    tab = await get_nodriver_tab(
+        driver=driver,
+        url=yt_link,
+        delay=delay,
+        add_tab_delay=2,
+        split_tabs=split_tabs
+        )
+
     await slow_croll(tab,delay) # Scroll to description section
     sleep(delay()+2)
 

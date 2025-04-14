@@ -21,8 +21,8 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None):
         max_comments = settings.get("youtube").get("max_comments")
     delay = settings.get("extra").get("delay")
     delay = random_delay(delay)
+    split_tabs = settings.get("extra").get("split_tabs")
     # headless = settings.get("extra").get("headless")
-    # split_tabs = settings.get("extra").get("split_tabs")
 
     output_directory = create_directory_with_timestamp()
 
@@ -79,7 +79,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None):
             chrome_version_exception(e)
 
     # Parse extracted metadata to html
-    await parse_to_html(output_directory,yt_urls,files,info_list,driver,delay,save_comments,max_comments,test_code=test_code)
+    await parse_to_html(output_directory,yt_urls,files,info_list,driver,delay,save_comments,max_comments,split_tabs,test_code=test_code)
 
     driver.stop()
 
