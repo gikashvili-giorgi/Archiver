@@ -1,7 +1,7 @@
 {
     "youtube": {
         "save_comments": true,
-        "max_comments": 2
+        "max_comments": 1000
     },
     "extra": {
         "delay": 1,

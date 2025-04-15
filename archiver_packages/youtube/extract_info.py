@@ -1,7 +1,6 @@
 from selectolax.parser import HTMLParser
 from time import sleep
-from archiver_packages.utilities.selenium_utils import slow_croll
-from archiver_packages.utilities.nodriver_utils import get_nodriver_tab
+from archiver_packages.utilities.nodriver_utils import slow_croll, get_nodriver_tab
 from archiver_packages.utilities.file_utils import download_file
 from typing import Callable
 

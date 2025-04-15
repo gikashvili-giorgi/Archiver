@@ -9,7 +9,7 @@ from archiver_packages.youtube.youtube_to_html import parse_to_html
 
 
 
-async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None):
+async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip_download:bool=False) -> None:
 
     # Load settings
     settings: dict = json.loads(open('settings.json', encoding="utf-8").read())
@@ -40,7 +40,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None):
             yt_urls.extend(extracted_urls)
 
     # Download yt videos and extract metadata
-    info_list = download_videos_with_info(yt_urls,output_directory,test_code=test_code)
+    info_list = download_videos_with_info(yt_urls,output_directory,skip_download=skip_download)
 
     if test_code == True:
         files = [""]
@@ -88,7 +88,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None):
 
 if __name__ == '__main__':
 
-    from test_code import test_code, test_comments, test_yt_urls
+    from test_code import test_code, test_comments, test_yt_urls, skip_download
 
     if test_code:
         yt_urls = test_yt_urls
@@ -99,6 +99,7 @@ if __name__ == '__main__':
         archiver(
             yt_urls,
             test_code=test_code,
-            test_comments=test_comments
+            test_comments=test_comments,
+            skip_download=skip_download,
         )
     )

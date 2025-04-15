@@ -52,6 +52,6 @@ If you're on Windows, you can use the `start.cmd` script for an easy launch.
 - [ ] Implement support for downloading content from Instagram and TikTok
 
 ## Credits
-big thanks to @virag-ky for [this](https://github.com/virag-ky/Youtube-Clone) awesome html/css  
+big thanks to @virag-ky for [this](https://github.com/virag-ky/Youtube-Clone) awesome html/css
 
 For help contact @`gikashvili` (Discord)

@@ -1,10 +1,15 @@
 import nodriver as uc
 from time import sleep
 import os
-import random
 from typing import Callable
+from psutil import process_iter
+from random import uniform
 
-from archiver_packages.utilities.selenium_utils import kill_process
+
+
+def kill_process(process_name:str):
+    if process_name in (p.name() for p in process_iter()):
+        os.system(f"taskkill /f /im  {process_name}")
 
 
 async def nodriver_setup(profile:str):
@@ -43,6 +48,13 @@ async def get_nodriver_tab(driver,url:str,delay:Callable[[int],float],add_tab_de
         await split_window_size(tab,delay)
 
     return tab
+
+
+async def slow_croll(tab,delay:Callable[[int],float]):
+    for _ in range(3):
+        scroll_amount = uniform(100,120)
+        await tab.evaluate(f"window.scrollBy(0, {scroll_amount});")
+        sleep(delay()+1)
 
 
 async def page_scroll(tab,delay:Callable[[int],float],add_delay:int=0,end_key:bool=False) -> str|None:

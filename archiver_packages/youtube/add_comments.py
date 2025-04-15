@@ -1,13 +1,8 @@
-# from selenium import webdriver
-# from selenium.webdriver.common.by import By
-# from selenium.common.exceptions import NoSuchElementException
-# from selenium.webdriver.remote.webelement import WebElement
 from selectolax.parser import HTMLParser
 from bs4 import BeautifulSoup
 from time import sleep
 import json
-from archiver_packages.utilities.selenium_utils import slow_croll
-from archiver_packages.utilities.nodriver_utils import page_scroll, scroll_until_elements_loaded, activate_dialog_window
+from archiver_packages.utilities.nodriver_utils import slow_croll, page_scroll, scroll_until_elements_loaded, activate_dialog_window
 from archiver_packages.youtube.extract_comment_emoji import convert_youtube_emoji_url_to_emoji
 import archiver_packages.youtube_html_elements as youtube_html_elements
 from typing import Callable

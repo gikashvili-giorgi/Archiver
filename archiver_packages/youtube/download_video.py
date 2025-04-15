@@ -69,12 +69,7 @@ def get_youtube_links_from_playlist_and_channel(playlist_link:str) -> list[str]:
         return youtube_links
 
 
-def download_videos_with_info(video_urls:list,output_directory:str,test_code:bool=False) -> list[dict]:
-
-    if test_code:
-        skip_download = True
-    else:
-        skip_download = False
+def download_videos_with_info(video_urls:list,output_directory:str,skip_download:bool=False) -> list[dict]:
 
     ydl_opts = {
         'quiet': True,  # No stdout output
