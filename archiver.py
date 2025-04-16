@@ -22,6 +22,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
     delay = settings.get("extra").get("delay")
     delay = random_delay(delay)
     split_tabs = settings.get("extra").get("split_tabs")
+    profile = settings.get("extra").get("profile")
     # headless = settings.get("extra").get("headless")
 
     output_directory = create_directory_with_timestamp()
@@ -42,12 +43,15 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
     # Download yt videos and extract metadata
     info_list = download_videos_with_info(yt_urls,output_directory,skip_download=skip_download)
 
-    if test_code == True:
+    if test_code and skip_download:
         files = [""]
     else:
         # List downloaded videos
         files = list_files_by_creation_date(output_directory,except_extensions=[".json"])
         files_updated = []
+        
+        # Create output directory for each video
+        html_dir:str = ""
 
         # Move downloaded videos and info files to output folder
         for file in files:
@@ -71,7 +75,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
 
     # Load chromedriver
     try:
-        driver = await nodriver_setup(profile="Default")
+        driver = await nodriver_setup(profile)
     except Exception as e:
         print(e)
 
@@ -79,7 +83,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
             chrome_version_exception(e)
 
     # Parse extracted metadata to html
-    await parse_to_html(output_directory,yt_urls,files,info_list,driver,delay,save_comments,max_comments,split_tabs,test_code=test_code)
+    await parse_to_html(html_dir,yt_urls,files,info_list,driver,delay,save_comments,max_comments,split_tabs,test_code=test_code)
 
     driver.stop()
 
@@ -87,7 +91,6 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
 
 
 if __name__ == '__main__':
-
     from test_code import test_code, test_comments, test_yt_urls, skip_download
 
     if test_code:
