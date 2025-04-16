@@ -9,7 +9,7 @@ from archiver_packages.youtube.youtube_to_html import parse_to_html
 
 
 
-async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip_download:bool=False) -> None:
+async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,test_profile:str=None,skip_download:bool=False) -> None:
 
     # Load settings
     settings: dict = json.loads(open('settings.json', encoding="utf-8").read())
@@ -22,7 +22,10 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
     delay = settings.get("extra").get("delay")
     delay = random_delay(delay)
     split_tabs = settings.get("extra").get("split_tabs")
-    profile = settings.get("extra").get("profile")
+    if test_code and test_profile is not None:
+        profile = test_profile
+    else:
+        profile = settings.get("extra").get("profile")
     # headless = settings.get("extra").get("headless")
 
     output_directory = create_directory_with_timestamp()
@@ -43,6 +46,9 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
     # Download yt videos and extract metadata
     info_list = download_videos_with_info(yt_urls,output_directory,skip_download=skip_download)
 
+    # Create output directory for each video
+    html_dir:str = ""
+
     if test_code and skip_download:
         files = [""]
     else:
@@ -50,8 +56,6 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
         files = list_files_by_creation_date(output_directory,except_extensions=[".json"])
         files_updated = []
         
-        # Create output directory for each video
-        html_dir:str = ""
 
         # Move downloaded videos and info files to output folder
         for file in files:
@@ -91,7 +95,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,skip
 
 
 if __name__ == '__main__':
-    from test_code import test_code, test_comments, test_yt_urls, skip_download
+    from test_code import test_code, test_comments, test_yt_urls, test_profile, skip_download
 
     if test_code:
         yt_urls = test_yt_urls
@@ -103,6 +107,7 @@ if __name__ == '__main__':
             yt_urls,
             test_code=test_code,
             test_comments=test_comments,
+            test_profile=test_profile,
             skip_download=skip_download,
         )
     )
