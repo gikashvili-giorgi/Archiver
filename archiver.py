@@ -55,7 +55,6 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,test
         # List downloaded videos
         files = list_files_by_creation_date(output_directory,except_extensions=[".json"])
         files_updated = []
-        
 
         # Move downloaded videos and info files to output folder
         for file in files:
@@ -87,7 +86,7 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,test
             chrome_version_exception(e)
 
     # Parse extracted metadata to html
-    await parse_to_html(html_dir,yt_urls,files,info_list,driver,delay,save_comments,max_comments,split_tabs,test_code=test_code)
+    await parse_to_html(html_dir,yt_urls,files,info_list,driver,delay,save_comments,max_comments,split_tabs)
 
     driver.stop()
 
@@ -95,12 +94,17 @@ async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,test
 
 
 if __name__ == '__main__':
-    from test_code import test_code, test_comments, test_yt_urls, test_profile, skip_download
+
+    test_code = False
 
     if test_code:
+        from test_code import test_comments, test_yt_urls, test_profile, skip_download
         yt_urls = test_yt_urls
     else:
         yt_urls = input_youtube_links()
+        test_comments = None
+        test_profile = None
+        skip_download = False
 
     uc.loop().run_until_complete(
         archiver(

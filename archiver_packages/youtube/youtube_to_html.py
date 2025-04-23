@@ -71,7 +71,7 @@ def get_html_output_dir(video_id:str,root_directory:str) -> str:
             return dir
 
 
-async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],info_list:list[dict],driver,delay:Callable[[int],float],save_comments:bool,max_comments:int,split_tabs:bool,test_code:bool=False):
+async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],info_list:list[dict],driver,delay:Callable[[int],float],save_comments:bool,max_comments:int,split_tabs:bool):
 
     for (yt_url,file,info) in zip(yt_urls,files,info_list):
 
@@ -93,19 +93,13 @@ async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],i
 
         yt_url,video_publish_date,channel_keywords,channel_description,like_count,dislike_count,comment_count_str = modify_exctracted_info(yt_url,video_publish_date,channel_keywords,channel_description,like_count,dislike_count,comment_count)
 
-        html_output_dir = get_html_output_dir(video_id,output_directory)
+        # html_output_dir = get_html_output_dir(video_id,output_directory)
 
         # Download thumbnail
-        if test_code == True:
-            download_youtube_thumbnail(info,f"./{output_directory}/{video_id}_thumbnail.jpg")
-        else:
-            download_youtube_thumbnail(info,f"./{output_directory}/{html_output_dir}/{video_id}_thumbnail.jpg")
+        download_youtube_thumbnail(info,f"{output_directory}/{video_id}_thumbnail.jpg")
 
         input = open("./archiver_packages/youtube_html/index.html", 'rt', encoding="utf8")
-        if test_code == True:
-            output = open(f"./{output_directory}/{html_output_dir}.html", 'wt', encoding="utf8")
-        else:
-            output = open(f"./{output_directory}/{html_output_dir}/{html_output_dir}.html", 'wt', encoding="utf8")
+        output = open(f"{output_directory}/YouTube.html", 'wt', encoding="utf8")
 
         # Scrape additional info
         tab, profile_image = await scrape_info(driver,yt_url,delay,split_tabs)
@@ -129,7 +123,7 @@ async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],i
             )
 
         if save_comments == True:
-            await add_comments(tab,output_directory,html_output_dir,profile_image,comment_count,channel_author,output,delay,max_comments,test_code=test_code)
+            await add_comments(tab,output_directory,profile_image,comment_count,channel_author,output,delay,max_comments)
 
         output.write(youtube_html_elements.ending.html_end)
         print(f"HTML file created for {video_title}")
@@ -138,15 +132,10 @@ async def parse_to_html(output_directory:str,yt_urls:list[str],files:list[str],i
         output.close()
 
         # Copy assets and styles folders to html output dir
-        if test_code == True:
-            destination_path = f"{output_directory}/"
-        else:
-            destination_path = f"{output_directory}/{html_output_dir}"
-
         folders = ["assets","styles"]
 
         for folder in folders:
             copy_file_or_directory(
                 f"archiver_packages/youtube_html/{folder}",
-                destination_path
+                output_directory
             )

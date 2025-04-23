@@ -1,6 +1,6 @@
 # Archiver    
 Save YouTube videos offline, complete with metadata, in an HTML interface that replicates the YouTube experience.
-Download an [example output](https://f92.workupload.com/download/v4EBZxM5qUT)
+Download an [example output](https://www.dropbox.com/scl/fi/wfzfn82n69d15bkjzsbbs/Archiver-Export-Example.rar?rlkey=np62tkp2b2fc7rqv8ca3iont6&st=qvpjdaqf&dl=0)
 
 ![archiver_thumbnail](https://i.imgur.com/0KuTe24.png)
 

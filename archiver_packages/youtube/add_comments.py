@@ -174,7 +174,7 @@ def save_comments_to_json_file(path:str,comments_list:list[dict]):
             outfile.write(data)
 
 
-async def add_comments(tab,output_directory:str,html_output_dir:str,profile_image:str,comment_count:int,channel_author:str,output,delay:Callable[[int],float],max_comments:int,test_code:bool=False):
+async def add_comments(tab,output_directory:str,profile_image:str,comment_count:int,channel_author:str,output,delay:Callable[[int],float],max_comments:int):
 
     await slow_croll(tab,delay) # Scroll to description section and wait for comments to load
 
@@ -316,10 +316,7 @@ async def add_comments(tab,output_directory:str,html_output_dir:str,profile_imag
 
             comments_list.append(comment_dict)
 
-        if test_code == True:
-            save_comments_to_json_file(f"{output_directory}/comments.json",comments_list)
-        else:
-            save_comments_to_json_file(f"{output_directory}/{html_output_dir}/comments.json",comments_list)
+        save_comments_to_json_file(f"{output_directory}/comments.json",comments_list)
 
     except Exception as e:
         print(f"No Such Element...{e}")
