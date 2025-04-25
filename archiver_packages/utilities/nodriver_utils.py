@@ -109,7 +109,7 @@ async def page_scroll_to_bottom(tab,delay:Callable[[int],float],max_page_end_cou
             page_end_count = 0
 
 
-async def scroll_until_elements_loaded(tab,number_of_elements:int,number_of_page_results:int,delay:Callable[[int],float],extra_scrolls:int=5):
+async def scroll_until_elements_loaded(tab,number_of_elements:int,number_of_page_results:int,delay:Callable[[int],float],extra_scrolls:int=3):
     """
     Scrolls to the bottom of the page until the desired number of button elements are displayed.
 
@@ -130,7 +130,7 @@ async def scroll_until_elements_loaded(tab,number_of_elements:int,number_of_page
 
     for _ in range(scroll_count):
         await send_key(tab, "End", 35)
-        sleep(delay()+3)
+        sleep(delay()+1)
 
 
 async def send_key(tab,key:str,windows_virtual_key_code:int,modifiers=None):

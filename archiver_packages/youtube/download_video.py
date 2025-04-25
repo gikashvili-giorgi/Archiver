@@ -1,6 +1,7 @@
 import yt_dlp
 from archiver_packages.utilities.utilities import clear
-
+from rich.console import Console
+from rich.table import Table
 
 
 def fetch_videos_info(video_urls:list) -> list[dict]:
@@ -25,12 +26,12 @@ def fetch_videos_info(video_urls:list) -> list[dict]:
 
 
 def input_youtube_links() -> list[str]:
-
+    console = Console()
     yt_links = []
     try:
         while True:
-            print("\nNOTE:")
-            print("Add YouTube Video/Playlist/Channel URLs one by one. Finally type 'S/s' to start")
+            console.print("[bold yellow]\nNOTE:[/bold yellow]")
+            console.print("Add YouTube Video/Playlist/Channel URLs one by one. Finally type 'S/s' to start", style="cyan")
             link = input("\n >> Add YouTube link: ")
 
             if link.lower()=='s':
@@ -40,17 +41,21 @@ def input_youtube_links() -> list[str]:
 
             # Print Full list
             clear()
-            print("Author\t Title\t  Link\t")
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("Author", style="dim")
+            table.add_column("Title")
+            table.add_column("Link", overflow="fold")
 
             info_list = fetch_videos_info(yt_links)
 
             for yt_link,info in zip(yt_links,info_list):
                 video_title = info.get('title', None)
                 channel_author = info.get('uploader', None)
+                table.add_row(str(channel_author), str(video_title), yt_link)
 
-                print(channel_author + '\t '+ video_title + '\t ' + yt_link)
-    except:
-        print(f"Make sure, the YouTube links are in a correct format.")
+            console.print(table)
+    except Exception as e:
+        console.print(f"[bold red]Make sure, the YouTube links are in a correct format.[/bold red]")
 
     return yt_links
 

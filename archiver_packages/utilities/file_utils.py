@@ -1,52 +1,50 @@
 import os
 import shutil
 import requests
-
+import logging
 
 
 def move_file(source_path:str, destination_path:str):
+    """Move a file from source_path to destination_path."""
     try:
-        # Check if source file exists
         if not os.path.exists(source_path):
-            print(f"Source file '{source_path}' does not exist.")
+            logging.error(f"Source file '{source_path}' does not exist.")
             return
-
-        # Move the file
         shutil.move(source_path, destination_path)
-        print(f"File '{source_path}' moved to '{destination_path}' successfully.")
+        logging.info(f"File '{source_path}' moved to '{destination_path}' successfully.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logging.error(f"An error occurred: {e}")
 
 
 def create_directory(directory_name:str):
+    """Create a directory if it does not exist."""
     try:
-        # Check if the directory already exists
         if not os.path.exists(directory_name):
-            # Create the directory
             os.makedirs(directory_name)
-            print(f"Directory '{directory_name}' created successfully.")
+            logging.info(f"Directory '{directory_name}' created successfully.")
         else:
-            print(f"Directory '{directory_name}' already exists.")
+            logging.info(f"Directory '{directory_name}' already exists.")
     except OSError as error:
-        print(f"Error creating directory '{directory_name}': {error}")
+        logging.error(f"Error creating directory '{directory_name}': {error}")
 
 
 def copy_file_or_directory(source_path:str, destination_path:str):
+    """Copy a file or directory to a new location."""
     try:
         if os.path.isfile(source_path):
             shutil.copy(source_path, destination_path)
-            print(f"File copied successfully from {source_path} to {destination_path}")
+            logging.info(f"File copied successfully from {source_path} to {destination_path}")
         elif os.path.isdir(source_path):
             shutil.copytree(source_path, os.path.join(destination_path, os.path.basename(source_path)))
-            print(f"Directory copied successfully from {source_path} to {destination_path}")
+            logging.info(f"Directory copied successfully from {source_path} to {destination_path}")
         else:
-            print("Invalid source path. Neither a file nor a directory.")
+            logging.error("Invalid source path. Neither a file nor a directory.")
     except FileNotFoundError:
-        print("Source path not found.")
+        logging.error("Source path not found.")
     except PermissionError:
-        print("Permission denied.")
+        logging.error("Permission denied.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logging.error(f"An error occurred: {e}")
 
 
 def del_special_chars(filename:str) -> str:
@@ -95,13 +93,14 @@ def extract_filename_without_extension(file_path):
 
 
 def download_file(thumbnail_url, save_path):
+    """Download a file from a URL and save it to a path."""
     try:
         response = requests.get(thumbnail_url)
         if response.status_code == 200:
             with open(save_path, 'wb') as f:
                 f.write(response.content)
-            print(f"Thumbnail saved to {save_path}")
+            logging.info(f"Thumbnail saved to {save_path}")
         else:
-            print(f"Error downloading thumbnail. Status code: {response.status_code}")
+            logging.error(f"Error downloading thumbnail. Status code: {response.status_code}")
     except Exception as e:
-        print(f"Error downloading thumbnail: {e}")
+        logging.error(f"Error downloading thumbnail: {e}")

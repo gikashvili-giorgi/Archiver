@@ -1,3 +1,4 @@
+import logging
 from selectolax.parser import HTMLParser
 from bs4 import BeautifulSoup
 from time import sleep
@@ -8,8 +9,12 @@ import archiver_packages.youtube_html_elements as youtube_html_elements
 from typing import Callable
 import urllib.parse
 
+logging.basicConfig(level=logging.INFO)
 
 def format_text_emoji(input_text:str) -> str:
+    """
+    Format text with emojis.
+    """
     lines = input_text.split('\n')
     merged_lines = []
 
@@ -75,7 +80,9 @@ async def parse_comment_text(comment_ele) -> tuple[str]:
 
 
 def style_reply_mention(input_text:str) -> str:
-
+    """
+    Style reply mentions.
+    """
     input_text = input_text.strip()
 
     if input_text.startswith('@'):
@@ -94,8 +101,10 @@ def style_reply_mention(input_text:str) -> str:
     return input_text
 
 
-def parse_comments(html:HTMLParser):
-
+def parse_comments(html:HTMLParser) -> tuple[str, str, str, str, str]:
+    """
+    Parse comments.
+    """
     like_count = html.css_first("[id='vote-count-middle']").text().strip()
 
     channel_username = html.css_first("[id='author-text']").attributes.get("href")[1:]
@@ -152,7 +161,9 @@ async def load_all_comments(tab,delay:Callable[[int],float],max_comments:int,com
 
 
 async def check_for_pinned_comment(comment,comments_fetched:int) -> bool:
-
+    """
+    Check if the comment is pinned.
+    """
     is_comment_pinned = False
 
     if comments_fetched == 1:
@@ -165,6 +176,9 @@ async def check_for_pinned_comment(comment,comments_fetched:int) -> bool:
 
 
 def save_comments_to_json_file(path:str,comments_list:list[dict]):
+    """
+    Save comments to a JSON file.
+    """
     if comments_list != []:
         data = json.dumps(comments_list, indent=4)
 
@@ -173,14 +187,16 @@ def save_comments_to_json_file(path:str,comments_list:list[dict]):
 
 
 async def add_comments(tab,output_directory:str,profile_image:str,comment_count:int,channel_author:str,output,delay:Callable[[int],float],max_comments:int):
-
+    """
+    Fetch and process YouTube comments, saving them to HTML and JSON.
+    """
     await slow_croll(tab,delay) # Scroll to description section and wait for comments to load
 
-    print("Loading comments...")
+    logging.info("Loading comments...")
     comments = await load_all_comments(tab,delay,max_comments,comment_count)
     comments = comments[:max_comments]
 
-    print("Fetching comments...")
+    logging.info("Fetching comments...")
     comments_count = len(comments)
     comments_fetched = 0
     comments_list = []
@@ -188,7 +204,7 @@ async def add_comments(tab,output_directory:str,profile_image:str,comment_count:
     try:
         for comment in comments:
             comments_fetched += 1
-            print(f"Fetched {comments_fetched}/{comments_count} comments.", end='\r')
+            logging.info(f"Fetched {comments_fetched}/{comments_count} comments.", end='\r')
 
             # Check for pinned comment
             is_comment_pinned = await check_for_pinned_comment(comment,comments_fetched)
@@ -317,5 +333,5 @@ async def add_comments(tab,output_directory:str,profile_image:str,comment_count:
         save_comments_to_json_file(f"{output_directory}/comments.json",comments_list)
 
     except Exception as e:
-        print(f"No Such Element...{e}")
+        logging.error(f"No Such Element...{e}")
         pass

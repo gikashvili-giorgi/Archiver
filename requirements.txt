@@ -4,3 +4,4 @@ nodriver
 yt_dlp
 selectolax
 beautifulsoup4
+rich
