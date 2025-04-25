@@ -3,7 +3,9 @@ venv/
 
 # Others
 youtube_downloads*/
-test_code.py
+
+# Test files
+tests/
 
 # Editor Configurations
 .vscode/

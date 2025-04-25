@@ -1,111 +1,75 @@
 import os, json
 import nodriver as uc
-from archiver_packages.utilities.nodriver_utils import nodriver_setup
-from archiver_packages.utilities.nodriver_utils import random_delay
+from archiver_packages.utilities.nodriver_utils import nodriver_setup, random_delay
 from archiver_packages.utilities.file_utils import move_file, create_directory, list_files_by_creation_date, extract_filename_without_extension
 from archiver_packages.youtube.download_video import download_videos_with_info, get_youtube_links_from_playlist_and_channel, input_youtube_links
 from archiver_packages.utilities.archiver_utils import create_directory_with_timestamp, chrome_version_exception, rename_filename_to_id
 from archiver_packages.youtube.youtube_to_html import parse_to_html
 
 
+def load_settings():
+    """Load settings from settings.json file."""
+    with open('settings.json', encoding="utf-8") as f:
+        return json.load(f)
 
-async def archiver(yt_urls:list,test_code:bool=False,test_comments:int=None,test_profile:str=None,skip_download:bool=False) -> None:
-
-    # Load settings
-    settings: dict = json.loads(open('settings.json', encoding="utf-8").read())
-
-    save_comments = settings.get("youtube").get("save_comments")
-    if test_code and test_comments is not None:
-        max_comments = test_comments
-    else:
-        max_comments = settings.get("youtube").get("max_comments")
-    delay = settings.get("extra").get("delay")
-    delay = random_delay(delay)
-    split_tabs = settings.get("extra").get("split_tabs")
-    if test_code and test_profile is not None:
-        profile = test_profile
-    else:
-        profile = settings.get("extra").get("profile")
-    # headless = settings.get("extra").get("headless")
+async def archiver(yt_urls: list, test_code: bool = False, test_comments: int = None, test_profile: str = None, skip_download: bool = False) -> None:
+    settings = load_settings()
+    save_comments = settings["youtube"]["save_comments"]
+    max_comments = test_comments if test_code and test_comments is not None else settings["youtube"]["max_comments"]
+    delay = random_delay(settings["extra"]["delay"])
+    split_tabs = settings["extra"]["split_tabs"]
+    profile = test_profile if test_code and test_profile is not None else settings["extra"]["profile"]
 
     output_directory = create_directory_with_timestamp()
-
     print("\nDownloading videos...")
 
     # Extract yt urls from playlists and channels
-    for yt_url in yt_urls:
-        if "&list=" in yt_url:
-            extracted_urls = get_youtube_links_from_playlist_and_channel(yt_url)
-            yt_urls.remove(yt_url)
-            yt_urls.extend(extracted_urls)
-        elif "/@" in yt_url:
+    for yt_url in yt_urls[:]:
+        if "&list=" in yt_url or "/@" in yt_url:
             extracted_urls = get_youtube_links_from_playlist_and_channel(yt_url)
             yt_urls.remove(yt_url)
             yt_urls.extend(extracted_urls)
 
-    # Download yt videos and extract metadata
-    info_list = download_videos_with_info(yt_urls,output_directory,skip_download=skip_download)
+    info_list = download_videos_with_info(yt_urls, output_directory, skip_download=skip_download)
 
-    # Create output directory for each video
-    html_dir:str = ""
-
+    html_dir = ""
     if test_code and skip_download:
         files = [""]
     else:
-        # List downloaded videos
-        files = list_files_by_creation_date(output_directory,except_extensions=[".json"])
+        files = list_files_by_creation_date(output_directory, except_extensions=[".json"])
         files_updated = []
-
-        # Move downloaded videos and info files to output folder
         for file in files:
             filename_without_extension = extract_filename_without_extension(file)
             html_dir = f"{output_directory}/{filename_without_extension}"
             create_directory(html_dir)
             move_file(file, html_dir)
-
             file_output_dir = f"{html_dir}/{filename_without_extension}.mp4"
-            file_output_dir = rename_filename_to_id(filename_without_extension,html_dir,file_output_dir)
-
+            file_output_dir = rename_filename_to_id(filename_without_extension, html_dir, file_output_dir)
             files_updated.append(file_output_dir)
-
-            # Move json files to html folder
-            for file in os.listdir(output_directory):
-                file = f"{output_directory}/{file}"
-                if filename_without_extension in file and file.endswith(".json"):
-                    move_file(file, html_dir)
-
+            for f in os.listdir(output_directory):
+                f_path = f"{output_directory}/{f}"
+                if filename_without_extension in f and f.endswith(".json"):
+                    move_file(f_path, html_dir)
         files = files_updated
 
-    # Load chromedriver
     try:
         driver = await nodriver_setup(profile)
     except Exception as e:
         print(e)
+        if "only supports Chrome version" in str(e):
+            chrome_version_exception(str(e))
 
-        if "only supports Chrome version" in e:
-            chrome_version_exception(e)
-
-    # Parse extracted metadata to html
-    await parse_to_html(html_dir,yt_urls,files,info_list,driver,delay,save_comments,max_comments,split_tabs)
-
+    await parse_to_html(html_dir, yt_urls, files, info_list, driver, delay, save_comments, max_comments, split_tabs)
     driver.stop()
-
     print("\nCompleted..")
 
 
 if __name__ == '__main__':
-
+    yt_urls = input_youtube_links()
     test_code = False
-
-    if test_code:
-        from test_code import test_comments, test_yt_urls, test_profile, skip_download
-        yt_urls = test_yt_urls
-    else:
-        yt_urls = input_youtube_links()
-        test_comments = None
-        test_profile = None
-        skip_download = False
-
+    test_comments = None
+    test_profile = None
+    skip_download = False
     uc.loop().run_until_complete(
         archiver(
             yt_urls,

@@ -41,12 +41,10 @@ async def parse_comment_text(comment_ele) -> tuple[str]:
     url_list, timestamp_list = [], []
 
     # Replace url tags with url
-    for url_ele in soup.find_all(lambda tag: tag.name=="a" and tag.has_attr('href') and "youtube.com/redirect?" in tag["href"]):
-        url = url_ele["href"]
-        url = url.split("&q=")[1]
-        decoded_url = urllib.parse.unquote(url)
-        url_ele.replace_with(decoded_url)
-        url_list.append(decoded_url)
+    for url_ele in soup.find_all(lambda tag: tag.name=="a" and tag.has_attr('href') and "https://" in tag.text):
+        url = url_ele.text.strip()
+        url_ele.replace_with(url)
+        url_list.append(url)
 
     # Replace timestamp <a> tags with styled timestamp  
     for url_ele in soup.find_all(lambda tag: tag.name=="a" and tag.has_attr('href') and "&t=" in tag["href"]):
