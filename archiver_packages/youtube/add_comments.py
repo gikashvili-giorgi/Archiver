@@ -7,13 +7,18 @@ from archiver_packages.utilities.nodriver_utils import slow_croll, page_scroll, 
 from archiver_packages.youtube.extract_comment_emoji import convert_youtube_emoji_url_to_emoji
 import archiver_packages.youtube_html_elements as youtube_html_elements
 from typing import Callable
-import urllib.parse
 
 logging.basicConfig(level=logging.INFO)
 
 def format_text_emoji(input_text: str) -> str:
     """
     Format text with emojis, merging single-character lines with the previous line.
+
+    Args:
+        input_text (str): The input text to format.
+
+    Returns:
+        str: The formatted text.
     """
     lines = input_text.split('\n')
     merged_lines = []
@@ -28,6 +33,12 @@ def format_text_emoji(input_text: str) -> str:
 async def parse_comment_text(comment_ele) -> tuple[str, str]:
     """
     Parse comments/replies text and return both plain and styled text.
+
+    Args:
+        comment_ele: The comment element to parse.
+
+    Returns:
+        tuple[str, str]: Plain text and styled text.
     """
     text_ele = await comment_ele.query_selector('#content-text')
     text_ele_html = await text_ele.get_html()
@@ -69,6 +80,12 @@ async def parse_comment_text(comment_ele) -> tuple[str, str]:
 def style_reply_mention(input_text: str) -> str:
     """
     Style reply mentions in the input text.
+
+    Args:
+        input_text (str): The input text to style.
+
+    Returns:
+        str: The styled text with mentions.
     """
     input_text = input_text.strip()
     if input_text.startswith('@'):
@@ -84,6 +101,12 @@ def style_reply_mention(input_text: str) -> str:
 def parse_comments(html: HTMLParser) -> tuple[str, str, str, str, str]:
     """
     Parse comment HTML and extract like count, username, date, channel URL, and profile picture.
+
+    Args:
+        html (HTMLParser): The HTML parser object for the comment.
+
+    Returns:
+        tuple[str, str, str, str, str]: like_count, channel_username, comment_date, channel_url, channel_pfp
     """
     like_count = html.css_first("[id='vote-count-middle']").text().strip()
     channel_username = html.css_first("[id='author-text']").attributes.get("href")[1:]
@@ -98,6 +121,15 @@ def parse_comments(html: HTMLParser) -> tuple[str, str, str, str, str]:
 async def load_all_comments(tab, delay: Callable[[int], float], max_comments: int, comment_count: int):
     """
     Scroll to end of the page to load all comments.
+
+    Args:
+        tab: The browser tab object.
+        delay (Callable): Delay function.
+        max_comments (int): Maximum number of comments to load.
+        comment_count (int): Total number of comments expected.
+
+    Returns:
+        list: List of loaded comment elements.
     """
     sleep(delay() + 2)
     activate_btn = await tab.select("#owner-sub-count")
@@ -131,6 +163,13 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
 async def check_for_pinned_comment(comment, comments_fetched: int) -> bool:
     """
     Check if the comment is pinned.
+
+    Args:
+        comment: The comment element.
+        comments_fetched (int): Number of comments fetched so far.
+
+    Returns:
+        bool: True if the comment is pinned, False otherwise.
     """
     is_comment_pinned = False
     if comments_fetched == 1:
@@ -140,14 +179,21 @@ async def check_for_pinned_comment(comment, comments_fetched: int) -> bool:
     return is_comment_pinned
 
 
-def save_comments_to_json_file(path: str, comments_list: list[dict]):
+def save_comments_to_json_file(path: str, comments_list: list[dict]) -> None:
     """
     Save comments to a JSON file.
+
+    Args:
+        path (str): Path to save the JSON file.
+        comments_list (list[dict]): List of comment dictionaries.
     """
     if comments_list:
-        data = json.dumps(comments_list, indent=4)
-        with open(path, "w", encoding="utf-8") as outfile:
-            outfile.write(data)
+        try:
+            data = json.dumps(comments_list, indent=4)
+            with open(path, "w", encoding="utf-8") as outfile:
+                outfile.write(data)
+        except (OSError, TypeError) as e:
+            logging.error(f"Error saving comments to {path}: {e}")
 
 
 async def add_comments(
@@ -162,6 +208,16 @@ async def add_comments(
 ):
     """
     Fetch and process YouTube comments, saving them to HTML and JSON.
+
+    Args:
+        tab: The browser tab object.
+        output_directory (str): Directory to save the output files.
+        profile_image (str): URL of the profile image.
+        comment_count (int): Total number of comments expected.
+        channel_author (str): Author of the channel.
+        output: Output file object.
+        delay (Callable): Delay function.
+        max_comments (int): Maximum number of comments to fetch.
     """
     await slow_croll(tab, delay)
     logging.info("Loading comments...")

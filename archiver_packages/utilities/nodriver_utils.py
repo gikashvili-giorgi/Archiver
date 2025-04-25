@@ -1,23 +1,18 @@
 import nodriver as uc
-from time import sleep
 import os
+from time import sleep
 from typing import Callable
 from psutil import process_iter
 from random import uniform
 
-
-
-def kill_process(process_name:str):
+def kill_process(process_name: str):
     if process_name in (p.name() for p in process_iter()):
         os.system(f"taskkill /f /im  {process_name}")
 
-
-async def nodriver_setup(profile:str):
-
+async def nodriver_setup(profile: str):
+    """Set up a nodriver Chrome instance with the specified profile."""
     program_files = "Program Files" if "Google" in os.listdir("C:\\Program Files") else "Program Files (x86)"
     pc_user = os.getlogin()
-
-    # Kill all chrome.exe processes to avoid chromedriver window already closed exception
     kill_process("chrome.exe")
 
     driver = await uc.start(
@@ -33,38 +28,33 @@ async def nodriver_setup(profile:str):
     )
     return driver
 
-
-async def split_window_size(tab:uc.Tab,delay:Callable[[int],float]):
+async def split_window_size(tab: uc.Tab, delay: Callable[[int], float]):
     await tab.set_window_size(top=1, left=1)
     sleep(delay())
 
-
-async def get_nodriver_tab(driver,url:str,delay:Callable[[int],float],add_tab_delay:int=5,split_tabs:bool=False) -> uc.Tab:
-
+async def get_nodriver_tab(driver, url: str, delay: Callable[[int], float], add_tab_delay: int = 5, split_tabs: bool = False) -> uc.Tab:
     tab = await driver.get(url)
-    sleep(delay()+add_tab_delay)
+    sleep(delay() + add_tab_delay)
 
     if split_tabs:
-        await split_window_size(tab,delay)
+        await split_window_size(tab, delay)
 
     return tab
 
-
-async def slow_croll(tab,delay:Callable[[int],float]):
+async def slow_croll(tab, delay: Callable[[int], float]):
     for _ in range(3):
-        scroll_amount = uniform(100,120)
+        scroll_amount = uniform(100, 120)
         await tab.evaluate(f"window.scrollBy(0, {scroll_amount});")
-        sleep(delay()+1)
+        sleep(delay() + 1)
 
-
-async def page_scroll(tab,delay:Callable[[int],float],add_delay:int=0,end_key:bool=False) -> str|None:
+async def page_scroll(tab, delay: Callable[[int], float], add_delay: int = 0, end_key: bool = False) -> str | None:
     '''Scroll the webpage. return str if reached to the bottom'''
 
     # Get old scroll position
     last_height = await tab.evaluate("document.body.scrollHeight")
 
     # Wait and scroll
-    sleep(delay()+5+add_delay)
+    sleep(delay() + 5 + add_delay)
 
     if end_key:
         await send_key(tab, "End", 35)
@@ -73,10 +63,6 @@ async def page_scroll(tab,delay:Callable[[int],float],add_delay:int=0,end_key:bo
             var scrollingElement = document.scrollingElement || document.body;
             scrollingElement.scrollTop = scrollingElement.scrollHeight;
         """)
-
-    # # Scroll down the page by a random amount
-    # scroll_amount = random.uniform(5, 100)
-    # await tab.evaluate(f"window.scrollBy(0, {scroll_amount});")
 
     # Get the new scroll height
     new_height = await tab.evaluate("document.body.scrollHeight")
@@ -87,29 +73,25 @@ async def page_scroll(tab,delay:Callable[[int],float],add_delay:int=0,end_key:bo
     # Update the last height for the next iteration
     last_height = new_height
 
-
-async def page_scroll_to_bottom(tab,delay:Callable[[int],float],max_page_end_count:int=5,page_scroll_limit:int=None,end_key:bool=False):
-    """ Scroll to the bottom of the page. """
+async def page_scroll_to_bottom(tab, delay: Callable[[int], float], max_page_end_count: int = 5, page_scroll_limit: int = None, end_key: bool = False):
+    """Scroll to the bottom of the page."""
 
     page_end_count = 0
     page_scroll_count = 0
 
     while True:
         page_scroll_count += 1
-
-        if page_scroll_limit:
-            if page_scroll_count == page_scroll_limit:
+        if page_scroll_limit and page_scroll_count == page_scroll_limit:
                 break
 
-        if await page_scroll(tab,delay,end_key=end_key) == "page_end":
+        if await page_scroll(tab, delay, end_key=end_key) == "page_end":
             page_end_count += 1
             if page_end_count > max_page_end_count:
                 break
         else:
             page_end_count = 0
 
-
-async def scroll_until_elements_loaded(tab,number_of_elements:int,number_of_page_results:int,delay:Callable[[int],float],extra_scrolls:int=3):
+async def scroll_until_elements_loaded(tab, number_of_elements: int, number_of_page_results: int, delay: Callable[[int], float], extra_scrolls: int = 3):
     """
     Scrolls to the bottom of the page until the desired number of button elements are displayed.
 
@@ -130,11 +112,10 @@ async def scroll_until_elements_loaded(tab,number_of_elements:int,number_of_page
 
     for _ in range(scroll_count):
         await send_key(tab, "End", 35)
-        sleep(delay()+1)
+        sleep(delay() + 1)
 
-
-async def send_key(tab,key:str,windows_virtual_key_code:int,modifiers=None):
-    """ Send a key to the tab. """
+async def send_key(tab, key: str, windows_virtual_key_code: int, modifiers=None):
+    """Send a key to the tab."""
 
     # Dispatch the key event
     await tab.send(uc.cdp.input_.dispatch_key_event(
@@ -152,11 +133,9 @@ async def send_key(tab,key:str,windows_virtual_key_code:int,modifiers=None):
         windows_virtual_key_code=windows_virtual_key_code,
     ))
 
-
-async def send_key_element(self,key:str,windows_virtual_key_code:int):
+async def send_key_element(self, key: str, windows_virtual_key_code: int) -> None:
+    """Send a key event to a specific element."""
     await self.apply("(elem) => elem.focus()")
-
-    # Dispatch the key event
     await self.tab.send(uc.cdp.input_.dispatch_key_event(
         type_="keyDown",  # Press down the key
         key=key,
@@ -164,16 +143,14 @@ async def send_key_element(self,key:str,windows_virtual_key_code:int):
         windows_virtual_key_code=windows_virtual_key_code,
     ))
     await self.tab.send(uc.cdp.input_.dispatch_key_event(
-        type_="keyUp",  # Release the key
+        type_="keyUp",
         key=key,
         code=key,
         windows_virtual_key_code=windows_virtual_key_code,
     ))
 
-
-async def nodriver_send_message(tab,message_input_ele,message:str,delay:Callable[[int],float],press_enter:bool=True):
-
-    messages:list[str] = message.split("\n")
+async def nodriver_send_message(tab, message_input_ele, message: str, delay: Callable[[int], float], press_enter: bool = True):
+    messages: list[str] = message.split("\n")
 
     for idx, message in enumerate(messages):
         await message_input_ele.send_keys(message)
@@ -185,18 +162,15 @@ async def nodriver_send_message(tab,message_input_ele,message:str,delay:Callable
         sleep(delay())
 
     if press_enter:
-        await send_key(tab,"Enter",13)
-        sleep(delay()+3)
+        await send_key(tab, "Enter", 13)
+        sleep(delay() + 3)
 
-
-async def activate_dialog_window(element,delay:Callable[[int],float]):
-    """ Activate the dialog window in order to then scroll it down"""
+async def activate_dialog_window(element, delay: Callable[[int], float]):
+    """Activate the dialog window in order to then scroll it down"""
 
     await element.mouse_click(button="middle")
-    sleep(delay()+2)
+    sleep(delay() + 2)
 
-
-def random_delay(min_delay:int) -> float:
-    from random import uniform
-    delay = lambda delay = min_delay: uniform(delay,delay+3)
-    return delay
+def random_delay(min_delay: int = 1) -> Callable[[int], float]:
+    """Return a delay function with randomization."""
+    return lambda delay=min_delay: uniform(delay, delay + 3)

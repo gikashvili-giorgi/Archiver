@@ -48,6 +48,26 @@ If you're on Windows, you can use the `start.cmd` script for an easy launch.
 - The HTML output is saved in the `youtube_downloads` folder.
 - When moving the HTML file outside the folder, make sure to also copy the `css` file and `assets` folder.
 
+## Development
+
+To format code before committing, run:
+
+```
+black .
+```
+
+To run tests:
+
+```
+pytest
+```
+
+To install development dependencies:
+
+```
+pip install -r requirements-dev.txt
+```
+
 ## To-Do List
 - [ ] Implement support for downloading content from Instagram and TikTok
 
