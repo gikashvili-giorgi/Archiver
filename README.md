@@ -12,7 +12,7 @@ Download an [example output](https://drive.google.com/file/d/1GhoVJkxn6OMTzPKwNg
 - Use it as a tool for digital archiving and preservation of online media.
 
 ## How it Works
-Archiver relies on the Selenium and yt-dlp modules to function effectively. Here's a breakdown of its process:
+Archiver relies on the nodriver and yt-dlp modules to function effectively. Here's a breakdown of its process:
 
 1. Downloading YouTube Videos: Archiver initiates by downloading YouTube videos locally using yt-dlp.
 2. Collecting Metadata: Alongside the video downloads, Archiver gathers essential metadata associated with each YouTube video.
@@ -23,9 +23,9 @@ Archiver relies on the Selenium and yt-dlp modules to function effectively. Here
 2. Latest version of Google Chrome
 
 ## Setup
-1. Download the code directly or clone the repository using `git clone https://github.com/ZG4RBU/Archiver.git`.
+1. Download the code directly or clone the repository using `git clone https://github.com/gikashvili-giorgi/Archiver.git`.
 2. Install the necessary modules listed in `requirements.txt` by running `pip install -r requirements.txt`. Alternatively, on Windows, you can simply run the `requirements.cmd` script.
-3. Make sure you have the latest version of Google Chrome installed. This is required for the Selenium ChromeDriver component.
+3. Make sure you have the latest version of Google Chrome installed. This is required for the nodriver ChromeDriver component.
 4. Customize the `settings.json` file according to your preferences.
 
 ## Settings
