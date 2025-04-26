@@ -148,13 +148,13 @@ async def parse_to_html(output_directory: str, yt_urls: list[str], files: list[s
         yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count_str = modify_exctracted_info(
             yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count)
 
-        output_directory = get_html_output_dir(video_id, output_directory)
+        html_output_directory = get_html_output_dir(video_id, output_directory)
 
         # Download thumbnail
-        download_youtube_thumbnail(info, f"{output_directory}/{video_id}_thumbnail.jpg")
+        download_youtube_thumbnail(info, os.path.join(html_output_directory, f"{video_id}_thumbnail.jpg"))
 
         with open("./archiver_packages/youtube_html/index.html", 'rt', encoding="utf8") as input_file, \
-             open(f"{output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
+             open(f"{html_output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
             # Scrape additional info
             tab, profile_image = await scrape_info(driver, yt_url, delay, split_tabs)
             for line in input_file:
@@ -175,7 +175,7 @@ async def parse_to_html(output_directory: str, yt_urls: list[str], files: list[s
                     .replace('VIDEO_SOURCE', f'media-extracted/{filename}')
                 )
             if save_comments:
-                await add_comments(tab, output_directory, profile_image, comment_count, channel_author, output_file, delay, max_comments)
+                await add_comments(tab, html_output_directory, profile_image, comment_count, channel_author, output_file, delay, max_comments)
             output_file.write(youtube_html_elements.ending.html_end)
             print(f"HTML file created for {video_title}")
 
@@ -183,10 +183,10 @@ async def parse_to_html(output_directory: str, yt_urls: list[str], files: list[s
         for folder in ["assets", "styles"]:
             copy_file_or_directory(
                 f"archiver_packages/youtube_html/{folder}",
-                output_directory
+                html_output_directory
             )
         # Move .json and .mp4 files using helper
-        move_files_with_extension(output_directory, ".json", os.path.join(output_directory, "data-extracted"))
-        move_files_with_extension(output_directory, ".mp4", os.path.join(output_directory, "media-extracted"))
+        move_files_with_extension(html_output_directory, ".json", os.path.join(html_output_directory, "data-extracted"))
+        move_files_with_extension(html_output_directory, ".mp4", os.path.join(html_output_directory, "media-extracted"))
 
-        download_best_audio(yt_url, os.path.join(output_directory, "media-extracted"))
+        download_best_audio(yt_url, os.path.join(html_output_directory, "media-extracted"))
