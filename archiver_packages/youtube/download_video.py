@@ -3,10 +3,10 @@ from archiver_packages.utilities.utilities import clear
 from rich.console import Console
 from rich.table import Table
 
-
-def fetch_videos_info(video_urls:list) -> list[dict]:
+def fetch_videos_info(video_urls: list) -> list[dict]:
+    """Fetch metadata for a list of YouTube videos."""
     ydl_opts = {
-        'quiet': True,  # No stdout output
+        'quiet': True,
         'no_warnings': True,
         'forcetitle': True,
         'writesubtitles': False,
@@ -14,18 +14,15 @@ def fetch_videos_info(video_urls:list) -> list[dict]:
         'writeinfojson': False,
         'skip_download': True,
     }
-
     info_list = []
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         for video_url in video_urls:
             info = ydl.extract_info(video_url)
             info_list.append(info)
-
     return info_list
 
-
 def input_youtube_links() -> list[str]:
+    """Prompt user for YouTube links and display info table."""
     console = Console()
     yt_links = []
     try:
@@ -33,68 +30,51 @@ def input_youtube_links() -> list[str]:
             console.print("[bold yellow]\nNOTE:[/bold yellow]")
             console.print("Add YouTube Video/Playlist/Channel URLs one by one. Finally type 'S/s' to start", style="cyan")
             link = input("\n >> Add YouTube link: ")
-
-            if link.lower()=='s':
+            if link.lower() == 's':
                 break
-            if link not in yt_links: # Avoid duplicates
+            if link not in yt_links:
                 yt_links.append(link)
-
-            # Print Full list
             clear()
             table = Table(show_header=True, header_style="bold magenta")
             table.add_column("Author", style="dim")
             table.add_column("Title")
             table.add_column("Link", overflow="fold")
-
             info_list = fetch_videos_info(yt_links)
-
-            for yt_link,info in zip(yt_links,info_list):
+            for yt_link, info in zip(yt_links, info_list):
                 video_title = info.get('title', None)
                 channel_author = info.get('uploader', None)
                 table.add_row(str(channel_author), str(video_title), yt_link)
-
             console.print(table)
-    except Exception as e:
-        console.print(f"[bold red]Make sure, the YouTube links are in a correct format.[/bold red]")
-
+    except Exception:
+        console.print("[bold red]Make sure, the YouTube links are in a correct format.[/bold red]")
     return yt_links
 
-
-def get_youtube_links_from_playlist_and_channel(playlist_link:str) -> list[str]:
-
+def get_youtube_links_from_playlist_and_channel(playlist_link: str) -> list[str]:
+    """Extract all video links from a playlist or channel."""
     with yt_dlp.YoutubeDL() as ydl:
         playlist_dict = ydl.extract_info(playlist_link, download=False)
         video_list = playlist_dict.get('entries', [])
-
-        youtube_links = []
-
-        for video in video_list:
-            youtube_links.append(video['webpage_url'])
-
+        youtube_links = [video['webpage_url'] for video in video_list]
         return youtube_links
 
-
-def download_videos_with_info(video_urls:list,output_directory:str,skip_download:bool=False) -> list[dict]:
-
+def download_videos_with_info(video_urls: list, output_directory: str, skip_download: bool = False) -> list[dict]:
+    """Download YouTube videos and return their metadata."""
     ydl_opts = {
-        'quiet': True,  # No stdout output
+        'quiet': True,
         'format': 'bestvideo+bestaudio/best',
         'no_warnings': True,
         'forcetitle': True,
         'writesubtitles': False,
         'writeautomaticsub': False,
         'writeinfojson': True,
-        'writecomments': True,  # Enables downloading comments
+        'writecomments': True,
         'skip_download': skip_download,
-        'merge_output_format': 'mp4',  # Ensures the final output is in mp4 format
+        'merge_output_format': 'mp4',
         'outtmpl': f"{output_directory}/%(title)s [%(id)s].%(ext)s"
     }
-
     info_list = []
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         for video_url in video_urls:
             info = ydl.extract_info(video_url, download=True)
             info_list.append(info)
-
     return info_list

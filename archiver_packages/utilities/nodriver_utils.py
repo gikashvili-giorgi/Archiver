@@ -5,16 +5,16 @@ from typing import Callable
 from psutil import process_iter
 from random import uniform
 
-def kill_process(process_name: str):
+def kill_process(process_name: str) -> None:
+    """Kill a process by name."""
     if process_name in (p.name() for p in process_iter()):
-        os.system(f"taskkill /f /im  {process_name}")
+        os.system(f"taskkill /f /im {process_name}")
 
 async def nodriver_setup(profile: str):
     """Set up a nodriver Chrome instance with the specified profile."""
     program_files = "Program Files" if "Google" in os.listdir("C:\\Program Files") else "Program Files (x86)"
     pc_user = os.getlogin()
     kill_process("chrome.exe")
-
     driver = await uc.start(
         headless=False,
         user_data_dir=rf"C:\Users\{pc_user}\AppData\Local\Google\Chrome\User Data",  # by specifying it, it won't be automatically cleaned up when finished
@@ -28,32 +28,29 @@ async def nodriver_setup(profile: str):
     )
     return driver
 
-async def split_window_size(tab: uc.Tab, delay: Callable[[int], float]):
+async def split_window_size(tab: uc.Tab, delay: Callable[[int], float]) -> None:
+    """Split the window size."""
     await tab.set_window_size(top=1, left=1)
     sleep(delay())
 
 async def get_nodriver_tab(driver, url: str, delay: Callable[[int], float], add_tab_delay: int = 5, split_tabs: bool = False) -> uc.Tab:
+    """Get a new tab in the nodriver instance."""
     tab = await driver.get(url)
     sleep(delay() + add_tab_delay)
-
     if split_tabs:
         await split_window_size(tab, delay)
-
     return tab
 
-async def slow_croll(tab, delay: Callable[[int], float]):
+async def slow_croll(tab, delay: Callable[[int], float]) -> None:
+    """Scroll the page slowly."""
     for _ in range(3):
         scroll_amount = uniform(100, 120)
         await tab.evaluate(f"window.scrollBy(0, {scroll_amount});")
         sleep(delay() + 1)
 
 async def page_scroll(tab, delay: Callable[[int], float], add_delay: int = 0, end_key: bool = False) -> str | None:
-    '''Scroll the webpage. return str if reached to the bottom'''
-
-    # Get old scroll position
+    """Scroll the webpage. Return 'page_end' if reached the bottom."""
     last_height = await tab.evaluate("document.body.scrollHeight")
-
-    # Wait and scroll
     sleep(delay() + 5 + add_delay)
 
     if end_key:
@@ -64,18 +61,15 @@ async def page_scroll(tab, delay: Callable[[int], float], add_delay: int = 0, en
             scrollingElement.scrollTop = scrollingElement.scrollHeight;
         """)
 
-    # Get the new scroll height
     new_height = await tab.evaluate("document.body.scrollHeight")
 
     if new_height == last_height: 
         return "page_end"
 
-    # Update the last height for the next iteration
     last_height = new_height
 
 async def page_scroll_to_bottom(tab, delay: Callable[[int], float], max_page_end_count: int = 5, page_scroll_limit: int = None, end_key: bool = False):
     """Scroll to the bottom of the page."""
-
     page_end_count = 0
     page_scroll_count = 0
 
@@ -92,32 +86,15 @@ async def page_scroll_to_bottom(tab, delay: Callable[[int], float], max_page_end
             page_end_count = 0
 
 async def scroll_until_elements_loaded(tab, number_of_elements: int, number_of_page_results: int, delay: Callable[[int], float], extra_scrolls: int = 3):
-    """
-    Scrolls to the bottom of the page until the desired number of button elements are displayed.
-
-    Parameters:
-    - tab: The browser tab object.
-    - number_of_elements: The total number of button elements to be displayed after scrolling.
-    - number_of_page_results: The number of results displayed per scroll.
-
-    Returns:
-    - None
-    """
-
-    # Ensure at least required scrolls
+    """Scroll to the bottom of the page until the desired number of elements are displayed."""
     scroll_count = max(1, (number_of_elements + number_of_page_results - 1) // number_of_page_results)
-
-    # Add extra page scrolls
-    scroll_count = scroll_count + extra_scrolls
-
+    scroll_count += extra_scrolls
     for _ in range(scroll_count):
         await send_key(tab, "End", 35)
         sleep(delay() + 1)
 
 async def send_key(tab, key: str, windows_virtual_key_code: int, modifiers=None):
     """Send a key to the tab."""
-
-    # Dispatch the key event
     await tab.send(uc.cdp.input_.dispatch_key_event(
         type_="keyDown",  # Press down the key
         modifiers=modifiers,
@@ -150,6 +127,7 @@ async def send_key_element(self, key: str, windows_virtual_key_code: int) -> Non
     ))
 
 async def nodriver_send_message(tab, message_input_ele, message: str, delay: Callable[[int], float], press_enter: bool = True):
+    """Send a message in the nodriver instance."""
     messages: list[str] = message.split("\n")
 
     for idx, message in enumerate(messages):
@@ -165,9 +143,8 @@ async def nodriver_send_message(tab, message_input_ele, message: str, delay: Cal
         await send_key(tab, "Enter", 13)
         sleep(delay() + 3)
 
-async def activate_dialog_window(element, delay: Callable[[int], float]):
-    """Activate the dialog window in order to then scroll it down"""
-
+async def activate_dialog_window(element, delay: Callable[[int], float]) -> None:
+    """Activate the dialog window to then scroll it down."""
     await element.mouse_click(button="middle")
     sleep(delay() + 2)
 

@@ -3,31 +3,48 @@ import json
 import logging
 import nodriver as uc
 from archiver_packages.utilities.nodriver_utils import nodriver_setup, random_delay
-from archiver_packages.utilities.file_utils import move_file, create_directory, list_files_by_creation_date, extract_filename_without_extension
-from archiver_packages.youtube.download_video import download_videos_with_info, get_youtube_links_from_playlist_and_channel, input_youtube_links
-from archiver_packages.utilities.archiver_utils import create_directory_with_timestamp, chrome_version_exception, rename_filename_to_id
+from archiver_packages.utilities.file_utils import (
+    move_file,
+    create_directory,
+    list_files_by_creation_date,
+    extract_filename_without_extension,
+)
+from archiver_packages.youtube.download_video import (
+    download_videos_with_info,
+    get_youtube_links_from_playlist_and_channel,
+    input_youtube_links,
+)
+from archiver_packages.utilities.archiver_utils import (
+    create_directory_with_timestamp,
+    chrome_version_exception,
+    rename_filename_to_id,
+)
 from archiver_packages.youtube.youtube_to_html import parse_to_html
 
 logging.basicConfig(level=logging.INFO)
 
+
 def load_settings() -> dict:
     """Load settings from settings.json file."""
-    with open('settings.json', encoding="utf-8") as f:
+    with open("settings.json", encoding="utf-8") as f:
         return json.load(f)
+
 
 async def archiver(
     yt_urls: list[str],
     test_code: bool = False,
     test_comments: int = None,
     test_profile: str = None,
-    skip_download: bool = False
+    skip_download: bool = False,
 ) -> None:
     """
     Main archiver workflow: downloads videos, processes metadata, and generates HTML output.
     """
     settings = load_settings()
     save_comments = settings["youtube"]["save_comments"]
-    max_comments = test_comments if test_code and test_comments is not None else settings["youtube"]["max_comments"]
+    max_comments = (
+        test_comments if test_code and test_comments is not None else settings["youtube"]["max_comments"]
+    )
     delay = random_delay(settings["extra"]["delay"])
     split_tabs = settings["extra"]["split_tabs"]
     profile = test_profile if test_code and test_profile is not None else settings["extra"]["profile"]
@@ -72,12 +89,14 @@ async def archiver(
             chrome_version_exception(str(e))
         return
 
-    await parse_to_html(html_dir, yt_urls, files, info_list, driver, delay, save_comments, max_comments, split_tabs)
+    await parse_to_html(
+        html_dir, yt_urls, files, info_list, driver, delay, save_comments, max_comments, split_tabs
+    )
     driver.stop()
     logging.info("Completed.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     yt_urls = input_youtube_links()
     test_code = False
     test_comments = None

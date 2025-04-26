@@ -1,12 +1,12 @@
 # Utility functions for file operations
-
 import os
 import shutil
 import requests
 import logging
+from typing import List
 
 
-def move_file(source_path:str, destination_path:str):
+def move_file(source_path: str, destination_path: str) -> None:
     """Move a file from source_path to destination_path."""
     try:
         if not os.path.exists(source_path):
@@ -18,7 +18,7 @@ def move_file(source_path:str, destination_path:str):
         logging.error(f"An error occurred: {e}")
 
 
-def create_directory(directory_name:str):
+def create_directory(directory_name: str) -> None:
     """Create a directory if it does not exist."""
     try:
         if not os.path.exists(directory_name):
@@ -30,7 +30,7 @@ def create_directory(directory_name:str):
         logging.error(f"Error creating directory '{directory_name}': {error}")
 
 
-def copy_file_or_directory(source_path:str, destination_path:str):
+def copy_file_or_directory(source_path: str, destination_path: str) -> None:
     """Copy a file or directory to a new location."""
     try:
         if os.path.isfile(source_path):
@@ -49,60 +49,44 @@ def copy_file_or_directory(source_path:str, destination_path:str):
         logging.error(f"An error occurred: {e}")
 
 
-def del_special_chars(filename:str) -> str:
-    """ Removes special characters from a filename to ensure compatibility with Windows file naming rules. """
-
-    special_chars = ["/","\\",":","*","?",'"',"<",">","|"]
-
+def del_special_chars(filename: str) -> str:
+    """Remove special characters from a filename for Windows compatibility."""
+    special_chars = ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]
     for char in special_chars:
-        if char in filename:
-            filename = filename.replace(char, "")
-
+        filename = filename.replace(char, "")
     return filename
 
 
-def list_files_by_creation_date(folder_path:str,except_extensions:list=None) -> list[str]:
-    # Initialize an empty list to store file paths
+def list_files_by_creation_date(folder_path: str, except_extensions: List[str] = None) -> List[str]:
+    """List files in a folder by creation date, optionally excluding extensions."""
     file_paths = []
-
-    # Get the absolute path of the folder
     folder_path = os.path.abspath(folder_path)
-
-    # Iterate through all the files in the folder
     for filename in os.listdir(folder_path):
-
-        if except_extensions is not None:
-            if any([x in filename.lower() for x in except_extensions]):
-                continue
-
+        if except_extensions and any(x in filename.lower() for x in except_extensions):
+            continue
         file_path = os.path.join(folder_path, filename)
-
-        # Check if the current item is a file and not a directory
         if os.path.isfile(file_path):
-            # Append the file path to the list
             file_paths.append(file_path)
-
-    # Sort the list of file paths based on the creation date (oldest to newest)
     file_paths.sort(key=lambda x: os.path.getctime(x))
-
     return file_paths
 
 
-def extract_filename_without_extension(file_path):
+def extract_filename_without_extension(file_path: str) -> str:
+    """Extract the filename without its extension."""
     filename_with_extension = os.path.basename(file_path)
     filename_without_extension, _ = os.path.splitext(filename_with_extension)
     return filename_without_extension
 
 
-def download_file(thumbnail_url, save_path):
+def download_file(thumbnail_url: str, save_path: str) -> None:
     """Download a file from a URL and save it to a path."""
     try:
-        response = requests.get(thumbnail_url)
+        response = requests.get(thumbnail_url, timeout=10)
         if response.status_code == 200:
             with open(save_path, 'wb') as f:
                 f.write(response.content)
             logging.info(f"Thumbnail saved to {save_path}")
         else:
             logging.error(f"Error downloading thumbnail. Status code: {response.status_code}")
-    except Exception as e:
+    except requests.RequestException as e:
         logging.error(f"Error downloading thumbnail: {e}")
