@@ -1,77 +1,120 @@
-# Archiver    
+# Archiver
+
 Save YouTube videos offline, complete with metadata, in an HTML interface that replicates the YouTube experience.
-Download an [example output](https://drive.google.com/file/d/1GhoVJkxn6OMTzPKwNgKyUam3NgUeVo0b/view?usp=sharing)
+
+[Download an example output](https://drive.google.com/file/d/1GhoVJkxn6OMTzPKwNgKyUam3NgUeVo0b/view?usp=sharing)
 
 ![archiver_thumbnail](https://i.imgur.com/0KuTe24.png)
 
+---
+
+## Features
+- Download YouTube videos and metadata for offline access
+- Generates a YouTube-like HTML interface for easy browsing
+- Saves comments, channel info, and video details
+- Preserves video thumbnails and assets
+- OSINT-friendly: visualize and archive online content
+
+---
+
 ## Use Cases
-- Create a personal offline library of your favorite YouTube content.
-- Download YouTube videos that may be deleted later.
-- Archiver can also be used as an OSINT tool to better visualize gathered information.
-- Ensure access to videos in regions with restricted internet access.
-- Use it as a tool for digital archiving and preservation of online media.
+- Create a personal offline library of your favorite YouTube content
+- Archive videos that may be deleted or geo-blocked
+- Digital preservation for research, OSINT, or personal use
+- Access videos in regions with restricted internet
+
+---
 
 ## How it Works
-Archiver relies on the nodriver and yt-dlp modules to function effectively. Here's a breakdown of its process:
+Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading and [nodriver](https://github.com/ultrafunkamsterdam/nodriver) for browser automation. The workflow:
 
-1. Downloading YouTube Videos: Archiver initiates by downloading YouTube videos locally using yt-dlp.
-2. Collecting Metadata: Alongside the video downloads, Archiver gathers essential metadata associated with each YouTube video.
-3. Compilation into HTML Format: After completing the downloads and metadata collection, Archiver assembles the YouTube videos and their corresponding metadata into an HTML file for easy access and reference.
+1. **Download Videos:** Uses yt-dlp to fetch videos and metadata
+2. **Collect Metadata:** Gathers video info, comments, and channel details
+3. **Generate HTML:** Compiles everything into a browsable HTML file with assets
+
+---
 
 ## Prerequisites
-1. Python 3.10+
-2. Latest version of Google Chrome
+- Python 3.11+
+- Latest version of Google Chrome (required for nodriver)
+
+---
 
 ## Setup
-1. Download the code directly or clone the repository using `git clone https://github.com/gikashvili-giorgi/Archiver.git`.
-2. Install the necessary modules listed in `requirements.txt` by running `pip install -r requirements.txt`. Alternatively, on Windows, you can simply run the `requirements.cmd` script.
-3. Make sure you have the latest version of Google Chrome installed. This is required for the nodriver ChromeDriver component.
-4. Customize the `settings.json` file according to your preferences.
+1. **Clone the repository:**
+   ```sh
+   git clone https://github.com/gikashvili-giorgi/Archiver.git
+   cd Archiver
+   ```
+2. **Install dependencies:**
+   ```sh
+   pip install -r requirements.txt
+   ```
+   *On Windows, you can run `requirements.cmd` instead.*
+3. **Ensure Google Chrome is up to date.**
+4. **Configure settings:**
+   - Edit `settings.json` to customize options (see below).
+
+---
 
 ## Settings
-`youtube > save_comments` > Enter true/false.
+Edit `settings.json` to control Archiver's behavior:
 
-`extra > delay` > Delay per action.
+- `youtube > save_comments`: `true` or `false` — Save YouTube comments
+- `youtube > max_comments`: Maximum number of comments to save (e.g., `1000`)
+- `extra > delay`: Delay (in seconds) between actions (default: `1`)
+- `extra > headless`: Run Chrome in headless mode (`true`/`false`)
+- `extra > split_tabs`: Use separate tabs for each video (`true`/`false`)
+- `extra > profile`: Chrome profile to use (default: `Default`)
 
-`extra > headless` > Run chrome as background process. Enter true/false.
+**Note:**
+- The `headless` option may not work reliably on all systems.
+- If `headless` is `false`, keep the Chrome window open and avoid minimizing it. For multitasking, resize the window instead of minimizing.
 
-NOTE:
-When setting the headless option to false, it's essential to keep the Chrome browser window open and avoid minimizing it. If you need to multitask, it's recommended to resize the browser window to one half of the screen for a seamless working experience.
-
+---
 
 ## Usage
-To start the code, execute the following command:
-```
+To start Archiver, run:
+
+```sh
 python3 archiver.py
 ```
-If you're on Windows, you can use the `start.cmd` script for an easy launch.
+
+*On Windows, you can use the `start.cmd` script for easy launch.*
+
 - The HTML output is saved in the `youtube_downloads` folder.
-- When moving the HTML file outside the folder, make sure to also copy the `css` file and `assets` folder.
+- If you move the HTML file, also copy the `styles` folder and `assets` directory for full functionality.
+
+---
 
 ## Development
+- **Format code:**
+  ```sh
+  black .
+  ```
+- **Run tests:**
+  ```sh
+  pytest
+  ```
+- **Install dev dependencies:**
+  ```sh
+  pip install -r requirements-dev.txt
+  ```
 
-To format code before committing, run:
+---
 
-```
-black .
-```
+## Troubleshooting
+- Ensure Chrome is up to date if you encounter browser errors.
+- Check `settings.json` for typos or invalid values.
+- For issues with dependencies, try reinstalling with `pip install -r requirements.txt`.
 
-To run tests:
-
-```
-pytest
-```
-
-To install development dependencies:
-
-```
-pip install -r requirements-dev.txt
-```
+---
 
 ## To-Do List
-- [ ] Implement support for downloading content from Instagram and TikTok
+- [ ] Add support for Instagram and TikTok downloads
+
+---
 
 ## Credits
-big thanks to @virag-ky for [this](https://github.com/virag-ky/Youtube-Clone) awesome html/css
-
-For help contact @`gikashvili` (Discord)
+- Huge thanks to [@virag-ky](https://github.com/virag-ky/Youtube-Clone) for the HTML/CSS template inspiration
+- For help, contact @`gikashvili` on Discord

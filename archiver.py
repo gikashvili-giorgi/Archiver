@@ -46,6 +46,7 @@ async def archiver(
         test_comments if test_code and test_comments is not None else settings["youtube"]["max_comments"]
     )
     delay = random_delay(settings["extra"]["delay"])
+    headless = settings["extra"]["headless"]
     split_tabs = settings["extra"]["split_tabs"]
     profile = test_profile if test_code and test_profile is not None else settings["extra"]["profile"]
 
@@ -81,7 +82,7 @@ async def archiver(
         files = files_updated
 
     try:
-        driver = await nodriver_setup(profile)
+        driver = await nodriver_setup(profile,headless)
     except Exception as e:
         logging.error(e)
         if "only supports Chrome version" in str(e):

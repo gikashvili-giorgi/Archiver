@@ -10,13 +10,13 @@ def kill_process(process_name: str) -> None:
     if process_name in (p.name() for p in process_iter()):
         os.system(f"taskkill /f /im {process_name}")
 
-async def nodriver_setup(profile: str):
+async def nodriver_setup(profile: str, headless: bool):
     """Set up a nodriver Chrome instance with the specified profile."""
     program_files = "Program Files" if "Google" in os.listdir("C:\\Program Files") else "Program Files (x86)"
     pc_user = os.getlogin()
     kill_process("chrome.exe")
     driver = await uc.start(
-        headless=False,
+        headless=headless,
         user_data_dir=rf"C:\Users\{pc_user}\AppData\Local\Google\Chrome\User Data",  # by specifying it, it won't be automatically cleaned up when finished
         browser_executable_path=f"C:\\{program_files}\\Google\\Chrome\\Application\\chrome.exe",
         browser_args=[
