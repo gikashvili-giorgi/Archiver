@@ -34,6 +34,7 @@ async def archiver(
     yt_urls: list[str],
     test_code: bool = False,
     test_comments: int = None,
+    test_headless: bool = False,
     test_profile: str = None,
     skip_download: bool = False,
 ) -> None:
@@ -46,7 +47,7 @@ async def archiver(
         test_comments if test_code and test_comments is not None else settings["youtube"]["max_comments"]
     )
     delay = random_delay(settings["extra"]["delay"])
-    headless = settings["extra"]["headless"]
+    headless = test_headless if test_code and test_headless is not None else settings["extra"]["headless"]
     split_tabs = settings["extra"]["split_tabs"]
     profile = test_profile if test_code and test_profile is not None else settings["extra"]["profile"]
 
@@ -100,6 +101,7 @@ if __name__ == "__main__":
     yt_urls = input_youtube_links()
     test_code = False
     test_comments = None
+    test_headless = False
     test_profile = None
     skip_download = False
     uc.loop().run_until_complete(
@@ -107,6 +109,7 @@ if __name__ == "__main__":
             yt_urls,
             test_code=test_code,
             test_comments=test_comments,
+            test_headless=test_headless,
             test_profile=test_profile,
             skip_download=skip_download,
         )
