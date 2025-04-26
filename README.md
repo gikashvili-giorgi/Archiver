@@ -3,7 +3,8 @@
 Save YouTube videos offline, complete with metadata, in an HTML interface that replicates the YouTube experience.
 
 [Download an example output](https://drive.google.com/file/d/1GhoVJkxn6OMTzPKwNgKyUam3NgUeVo0b/view?usp=sharing)
-
+<br>
+<br>
 ![archiver_thumbnail](https://i.imgur.com/0KuTe24.png)
 
 ---
