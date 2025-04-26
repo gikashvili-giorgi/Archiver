@@ -78,3 +78,17 @@ def download_videos_with_info(video_urls: list, output_directory: str, skip_down
             info = ydl.extract_info(video_url, download=True)
             info_list.append(info)
     return info_list
+
+def download_best_audio(url: str, output_directory: str) -> None:
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': f"{output_directory}/%(title)s [%(id)s].%(ext)s",
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '320',
+        }],
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])

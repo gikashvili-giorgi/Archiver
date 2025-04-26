@@ -61,7 +61,6 @@ async def archiver(
 
     info_list = download_videos_with_info(yt_urls, output_directory, skip_download=skip_download)
 
-    html_dir = ""
     if test_code and skip_download:
         files = [""]
     else:
@@ -90,7 +89,7 @@ async def archiver(
         return
 
     await parse_to_html(
-        html_dir, yt_urls, files, info_list, driver, delay, save_comments, max_comments, split_tabs
+        output_directory, yt_urls, files, info_list, driver, delay, save_comments, max_comments, split_tabs
     )
     driver.stop()
     logging.info("Completed.")
