@@ -5,7 +5,7 @@
     },
     "extra": {
         "delay": 1,
-        "headless": true,
+        "headless": false,
         "split_tabs": true,
         "profile": "Default"
     }

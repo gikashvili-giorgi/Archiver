@@ -99,18 +99,8 @@ async def archiver(
 
 if __name__ == "__main__":
     yt_urls = input_youtube_links()
-    test_code = False
-    test_comments = None
-    test_headless = False
-    test_profile = None
-    skip_download = False
     uc.loop().run_until_complete(
         archiver(
             yt_urls,
-            test_code=test_code,
-            test_comments=test_comments,
-            test_headless=test_headless,
-            test_profile=test_profile,
-            skip_download=skip_download,
         )
     )
