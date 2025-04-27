@@ -217,7 +217,7 @@ async def expand_all_comments(tab, delay: Callable[[int], float]):
         await button.click()
         sleep(delay() + 2)
         await slow_croll(tab, delay)
-        sleep(delay() + 3)
+        sleep(delay() + 2)
     while True:
         show_more_replies = await tab.select_all("button[aria-label='Show more replies']")
         if len(show_more_replies) == 0:
@@ -228,7 +228,7 @@ async def expand_all_comments(tab, delay: Callable[[int], float]):
             await button.click()
             sleep(delay() + 2)
             await slow_croll(tab, delay)
-            sleep(delay() + 5)
+            sleep(delay() + 4)
 
 async def add_comments(
     tab,
