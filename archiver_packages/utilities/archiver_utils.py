@@ -31,11 +31,11 @@ def chrome_version_exception(exception: str) -> None:
 
 
 def rename_filename_to_id(filename_without_extension: str, html_dir: str, file_output_dir: str) -> str:
-    """Rename a file to use its ID as the filename."""
-    match = re.search(r'\[([a-zA-Z0-9_-]+)\]', filename_without_extension)
-    if not match:
+    """Rename a file to use its ID as the filename (always use the last [id] in the filename)."""
+    matches = re.findall(r'\[([a-zA-Z0-9_-]+)\]', filename_without_extension)
+    if not matches:
         return file_output_dir
-    file_id = match.group(1)
+    file_id = matches[-1]  # Use the last match
     new_filename = f"{html_dir}/{file_id}.mp4"
     os.rename(file_output_dir, new_filename)
     return new_filename

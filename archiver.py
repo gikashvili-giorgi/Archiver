@@ -32,24 +32,21 @@ def load_settings() -> dict:
 
 async def archiver(
     yt_urls: list[str],
+    save_comments: bool,
+    max_comments: int,
+    delay: int,
+    headless: bool,
+    split_tabs: bool,
+    profile: str,
+    # Optional parameters
     test_code: bool = False,
-    test_comments: int = None,
-    test_headless: bool = False,
-    test_profile: str = None,
     skip_download: bool = False,
 ) -> None:
     """
     Main archiver workflow: downloads videos, processes metadata, and generates HTML output.
     """
-    settings = load_settings()
-    save_comments = settings["youtube"]["save_comments"]
-    max_comments = (
-        test_comments if test_code and test_comments is not None else settings["youtube"]["max_comments"]
-    )
-    delay = random_delay(settings["extra"]["delay"])
-    headless = test_headless if test_code and test_headless is not None else settings["extra"]["headless"]
-    split_tabs = settings["extra"]["split_tabs"]
-    profile = test_profile if test_code and test_profile is not None else settings["extra"]["profile"]
+
+    delay = random_delay(delay)
 
     output_directory = create_directory_with_timestamp()
     logging.info("Downloading videos...")
@@ -98,9 +95,25 @@ async def archiver(
 
 
 if __name__ == "__main__":
-    yt_urls = input_youtube_links()
+
+    settings = load_settings()
+    save_comments = settings["youtube"]["save_comments"]
+    max_comments = settings["youtube"]["max_comments"]
+    download_playlist = settings["youtube"]["download_playlist"]
+    delay = settings["extra"]["delay"]
+    headless = settings["extra"]["headless"]
+    split_tabs = settings["extra"]["split_tabs"]
+    profile = settings["extra"]["profile"]
+
+    yt_urls = input_youtube_links(download_playlist)
     uc.loop().run_until_complete(
         archiver(
             yt_urls,
+            save_comments,
+            max_comments,
+            delay,
+            headless,
+            split_tabs,
+            profile,
         )
     )

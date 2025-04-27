@@ -1,12 +1,13 @@
 {
     "youtube": {
         "save_comments": true,
-        "max_comments": 1000
+        "max_comments": 1000,
+        "download_playlist": false
     },
     "extra": {
         "delay": 1,
         "headless": false,
-        "split_tabs": true,
+        "split_tabs": false,
         "profile": "Default"
     }
 }

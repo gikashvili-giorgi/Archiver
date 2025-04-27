@@ -3,6 +3,7 @@ from archiver_packages.utilities.utilities import clear
 from rich.console import Console
 from rich.table import Table
 
+
 def fetch_videos_info(video_urls: list) -> list[dict]:
     """Fetch metadata for a list of YouTube videos."""
     ydl_opts = {
@@ -21,7 +22,7 @@ def fetch_videos_info(video_urls: list) -> list[dict]:
             info_list.append(info)
     return info_list
 
-def input_youtube_links() -> list[str]:
+def input_youtube_links(download_playlist: bool) -> list[str]:
     """Prompt user for YouTube links and display info table."""
     console = Console()
     yt_links = []
@@ -33,7 +34,10 @@ def input_youtube_links() -> list[str]:
             if link.lower() == 's':
                 break
             if link not in yt_links:
-                yt_links.append(link)
+                if download_playlist is False:
+                    yt_links.append(link.split("&")[0])
+                else:
+                    yt_links.append(link)
             clear()
             table = Table(show_header=True, header_style="bold magenta")
             table.add_column("Author", style="dim")
