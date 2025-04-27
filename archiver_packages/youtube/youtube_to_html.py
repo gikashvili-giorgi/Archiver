@@ -1,4 +1,6 @@
 import os, re
+import logging
+import traceback
 from archiver_packages.youtube.extract_info import scrape_info, download_youtube_thumbnail
 from archiver_packages.youtube.add_comments import add_comments
 from archiver_packages.utilities.utilities import convert_date_format
@@ -8,7 +10,7 @@ from typing import Callable
 import archiver_packages.youtube_html_elements as youtube_html_elements
 
 
-def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keywords: list, channel_description: str, like_count: int | None, dislike_count: int | None, comment_count: int | None) -> tuple:
+def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keywords: list, channel_description: str, like_count: int | None, dislike_count: int | None, comment_count: int) -> tuple:
     """
     Modify extracted YouTube video information.
 
@@ -19,7 +21,7 @@ def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keyword
         channel_description (str): Channel description.
         like_count (int | None): Number of likes.
         dislike_count (int | None): Number of dislikes.
-        comment_count (int | None): Number of comments.
+        comment_count (int): Number of comments.
 
     Returns:
         tuple: Modified YouTube video information.
@@ -69,7 +71,7 @@ def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keyword
         dislike_count = "DISLIKE"
 
     # Add comments tag
-    if comment_count is not None:
+    if comment_count is not None and comment_count != 0:
         comment_count = f"{comment_count:,} Comments"
     else:
         comment_count = "Comments are turned off."
@@ -77,7 +79,7 @@ def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keyword
     return (yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count)
 
 
-def get_html_output_dir(video_id: str, root_directory: str) -> str:
+def get_html_output_dir(video_id: str, root_directory: str) -> str | None:
     """
     Get the HTML output directory for a given video ID.
 
@@ -86,16 +88,19 @@ def get_html_output_dir(video_id: str, root_directory: str) -> str:
         root_directory (str): Root directory to search in.
 
     Returns:
-        str: HTML output directory.
+        str | None: HTML output directory, or None if not found.
     """
     for dir in os.listdir(root_directory):
         if video_id in dir:
             return os.path.join(root_directory, dir)
+    logging.error(f"No directory found for video_id: {video_id} in {root_directory}")
+    return None
 
 
-def move_files_with_extension(src_dir: str, ext: str, dest_folder: str):
+def move_files_with_extension(src_dir: str, ext: str, dest_folder: str) -> None:
     """
     Move files with a given extension from src_dir to dest_folder.
+    Logs errors with tracebacks if any file move fails.
     """
     os.makedirs(dest_folder, exist_ok=True)
     for filename in os.listdir(src_dir):
@@ -105,12 +110,22 @@ def move_files_with_extension(src_dir: str, ext: str, dest_folder: str):
             try:
                 os.rename(src, dst)
             except FileExistsError:
-                print(f"File {dst} already exists. Skipping.")
+                logging.warning(f"File {dst} already exists. Skipping.")
             except Exception as e:
-                print(f"Error moving {src} to {dst}: {e}")
+                logging.error(f"Error moving {src} to {dst}: {e}\n{traceback.format_exc()}")
 
 
-async def parse_to_html(output_directory: str, yt_urls: list[str], files: list[str], info_list: list[dict], driver, delay: Callable[[int], float], save_comments: bool, max_comments: int, split_tabs: bool):
+async def parse_to_html(
+    output_directory: str,
+    yt_urls: list[str],
+    files: list[str],
+    info_list: list[dict],
+    driver,
+    delay: Callable[[int], float],
+    save_comments: bool,
+    max_comments: int,
+    split_tabs: bool
+) -> None:
     """
     Parse YouTube video information to HTML.
 
@@ -124,13 +139,9 @@ async def parse_to_html(output_directory: str, yt_urls: list[str], files: list[s
         save_comments (bool): Whether to save comments.
         max_comments (int): Maximum number of comments to save.
         split_tabs (bool): Whether to split tabs.
-
-    Returns:
-        None
     """
     for (yt_url, file, info) in zip(yt_urls, files, info_list):
         filename = os.path.basename(file)
-
         # Extract the relevant pieces of information
         video_title = info.get('title', None)
         video_views = info.get('view_count', None)
@@ -142,51 +153,59 @@ async def parse_to_html(output_directory: str, yt_urls: list[str], files: list[s
         subscribers = info.get('channel_follower_count', None)
         like_count = info.get('like_count', None)
         dislike_count = info.get('dislike_count', None)
-        comment_count: int | None = info.get('comment_count', None)
+        comment_count = info.get('comment_count', None)
+        comment_count = 0 if comment_count is None else comment_count
         video_id = info.get("id")
-
         yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count_str = modify_exctracted_info(
             yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count)
-
         html_output_directory = get_html_output_dir(video_id, output_directory)
-
-        # Download thumbnail
-        download_youtube_thumbnail(info, os.path.join(html_output_directory, f"{video_id}_thumbnail.jpg"))
-
-        with open("./archiver_packages/youtube_html/index.html", 'rt', encoding="utf8") as input_file, \
-             open(f"{html_output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
-            # Scrape additional info
-            tab, profile_image = await scrape_info(driver, yt_url, delay, split_tabs)
-            for line in input_file:
-                output_file.write(
-                    line.replace('REPLACE_TITLE', video_title)
-                    .replace('TITLE_URL', yt_url)
-                    .replace('NUMBER_OF_VIEWS', f'{video_views:,}')
-                    .replace('CHANNEL_AUTHOR', channel_author)
-                    .replace('CHANNEL_URL', channel_url)
-                    .replace('PUBLISH_DATE', f'{video_publish_date}')
-                    .replace('CHANNEL_KEYWORDS', f'{channel_keywords}')
-                    .replace('CHANNEL_DESCRIPTION', channel_description)
-                    .replace('CHANNEL_SUBSCRIBERS', f'{subscribers:,} subscribers')
-                    .replace('PROFILE_IMAGE_LINK', profile_image)
-                    .replace('LIKE_COUNT', like_count)
-                    .replace('DISLIKES_COUNT', dislike_count)
-                    .replace('COMMENT_COUNT', f'{comment_count_str}')
-                    .replace('VIDEO_SOURCE', f'media-extracted/{filename}')
-                )
-            if save_comments:
-                await add_comments(tab, html_output_directory, profile_image, comment_count, channel_author, output_file, delay, max_comments)
-            output_file.write(youtube_html_elements.ending.html_end)
-            print(f"HTML file created for {video_title}")
-
+        if html_output_directory is None:
+            logging.error(f"Skipping video {video_title} due to missing output directory.")
+            continue
+        try:
+            # Download thumbnail
+            download_youtube_thumbnail(info, os.path.join(html_output_directory, f"{video_id}_thumbnail.jpg"))
+            with open("./archiver_packages/youtube_html/index.html", 'rt', encoding="utf8") as input_file, \
+                 open(f"{html_output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
+                # Scrape additional info
+                tab, profile_image = await scrape_info(driver, yt_url, delay, split_tabs)
+                for line in input_file:
+                    output_file.write(
+                        line.replace('REPLACE_TITLE', video_title)
+                        .replace('TITLE_URL', yt_url)
+                        .replace('NUMBER_OF_VIEWS', f'{video_views:,}')
+                        .replace('CHANNEL_AUTHOR', channel_author)
+                        .replace('CHANNEL_URL', channel_url)
+                        .replace('PUBLISH_DATE', f'{video_publish_date}')
+                        .replace('CHANNEL_KEYWORDS', f'{channel_keywords}')
+                        .replace('CHANNEL_DESCRIPTION', channel_description)
+                        .replace('CHANNEL_SUBSCRIBERS', f'{subscribers:,} subscribers')
+                        .replace('PROFILE_IMAGE_LINK', profile_image)
+                        .replace('LIKE_COUNT', like_count)
+                        .replace('DISLIKES_COUNT', dislike_count)
+                        .replace('COMMENT_COUNT', f'{comment_count_str}')
+                        .replace('VIDEO_SOURCE', f'media-extracted/{filename}')
+                    )
+                if save_comments:
+                    await add_comments(tab, html_output_directory, profile_image, comment_count, channel_author, output_file, delay, max_comments)
+                output_file.write(youtube_html_elements.ending.html_end)
+                logging.info(f"HTML file created for {video_title}")
+        except Exception as e:
+            logging.error(f"Error processing video {video_title}: {e}\n{traceback.format_exc()}")
+            continue
         # Copy assets and styles folders to html output dir
         for folder in ["assets", "styles"]:
-            copy_file_or_directory(
-                f"archiver_packages/youtube_html/{folder}",
-                html_output_directory
-            )
+            try:
+                copy_file_or_directory(
+                    f"archiver_packages/youtube_html/{folder}",
+                    html_output_directory
+                )
+            except Exception as e:
+                logging.error(f"Error copying {folder} to {html_output_directory}: {e}\n{traceback.format_exc()}")
         # Move .json and .mp4 files using helper
         move_files_with_extension(html_output_directory, ".json", os.path.join(html_output_directory, "data-extracted"))
         move_files_with_extension(html_output_directory, ".mp4", os.path.join(html_output_directory, "media-extracted"))
-
-        download_best_audio(yt_url, os.path.join(html_output_directory, "media-extracted"))
+        try:
+            download_best_audio(yt_url, os.path.join(html_output_directory, "media-extracted"))
+        except Exception as e:
+            logging.error(f"Error downloading best audio for {video_title}: {e}\n{traceback.format_exc()}")
