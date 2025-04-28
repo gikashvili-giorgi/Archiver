@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.table import Table
 
 
-def fetch_videos_info(video_urls: list) -> list[dict]:
+def fetch_videos_info(video_url: str) -> dict:
     """Fetch metadata for a list of YouTube videos."""
     ydl_opts = {
         'quiet': True,
@@ -15,17 +15,15 @@ def fetch_videos_info(video_urls: list) -> list[dict]:
         'writeinfojson': False,
         'skip_download': True,
     }
-    info_list = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        for video_url in video_urls:
-            info = ydl.extract_info(video_url)
-            info_list.append(info)
-    return info_list
+        info = ydl.extract_info(video_url)
+        return info
 
 def input_youtube_links(download_playlist: bool) -> list[str]:
     """Prompt user for YouTube links and display info table."""
     console = Console()
     yt_links = []
+    info_list = []
     try:
         while True:
             console.print("[bold yellow]\nNOTE:[/bold yellow]")
@@ -43,7 +41,8 @@ def input_youtube_links(download_playlist: bool) -> list[str]:
             table.add_column("Author", style="dim")
             table.add_column("Title")
             table.add_column("Link", overflow="fold")
-            info_list = fetch_videos_info(yt_links)
+            info = fetch_videos_info(yt_links[-1])
+            info_list.append(info)
             for yt_link, info in zip(yt_links, info_list):
                 video_title = info.get('title', None)
                 channel_author = info.get('uploader', None)
@@ -65,7 +64,7 @@ def download_videos_with_info(video_urls: list, output_directory: str, skip_down
     """Download YouTube videos and return their metadata."""
     ydl_opts = {
         'quiet': True,
-        'format': 'bestvideo+bestaudio/best',
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',
         'no_warnings': True,
         'forcetitle': True,
         'writesubtitles': False,
