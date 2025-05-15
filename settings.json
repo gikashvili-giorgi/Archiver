@@ -8,6 +8,7 @@
         "delay": 1,
         "headless": false,
         "split_tabs": false,
-        "profile": "Default"
+        "profile": "Default",
+        "browser": "Edge"
     }
 }

@@ -37,7 +37,7 @@ Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading and [no
 
 ## Prerequisites
 - Python 3.11+
-- Latest version of Google Chrome (required for nodriver)
+- Latest version of Google Chrome, Microsoft Edge, or Brave browser (required for nodriver automation)
 
 ---
 
@@ -52,7 +52,12 @@ Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading and [no
    pip install -r requirements.txt
    ```
    *On Windows, you can run `requirements.cmd` instead.*
-3. **Ensure Google Chrome is up to date.**
+3. **Install a supported browser:**
+   - Choose and install one of these browsers:
+     - Google Chrome
+     - Microsoft Edge
+     - Brave
+   - Make sure to keep your chosen browser updated for best compatibility
 4. **Configure settings:**
    - Edit `settings.json` to customize options (see below).
 
@@ -64,13 +69,15 @@ Edit `settings.json` to control Archiver's behavior:
 - `youtube > save_comments`: `true` or `false` — Save YouTube comments
 - `youtube > max_comments`: Maximum number of comments to save (e.g., `1000`)
 - `extra > delay`: Delay (in seconds) between actions (default: `1`)
-- `extra > headless`: Run Chrome in headless mode (`true`/`false`)
+- `extra > headless`: Run Browser in headless mode (`true`/`false`)
 - `extra > split_tabs`: Use separate tabs for each video (`true`/`false`)
-- `extra > profile`: Chrome profile to use (default: `Default`)
+- `extra > profile`: Browser profile to use (default: `Default`)
+- `extra > browser`: Select your preferred browser for automation (`Edge`, `Chrome`, or `Brave`)
 
 **Note:**
 - The `headless` option may not work reliably on all systems.
-- If `headless` is `false`, keep the Chrome window open and avoid minimizing it. For multitasking, resize the window instead of minimizing.
+- If `headless` is `false`, keep the Browser window open and avoid minimizing it. For multitasking, resize the window instead of minimizing.
+- If you encounter browser-related issues, try switching to a different supported browser in the `settings.json` file.
 
 ---
 
@@ -105,7 +112,7 @@ python3 archiver.py
 ---
 
 ## Troubleshooting
-- Ensure Chrome is up to date if you encounter browser errors.
+- Ensure Browser is up to date if you encounter browser errors.
 - Check `settings.json` for typos or invalid values.
 - For issues with dependencies, try reinstalling with `pip install -r requirements.txt`.
 

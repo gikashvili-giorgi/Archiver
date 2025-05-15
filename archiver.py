@@ -38,6 +38,7 @@ async def archiver(
     headless: bool,
     split_tabs: bool,
     profile: str,
+    browser: str,
     # Optional parameters
     test_code: bool = False,
     skip_download: bool = False,
@@ -80,7 +81,7 @@ async def archiver(
         files = files_updated
 
     try:
-        driver = await nodriver_setup(profile,headless)
+        driver = await nodriver_setup(profile, browser, headless)
     except Exception as e:
         logging.error(e)
         if "only supports Chrome version" in str(e):
@@ -104,6 +105,7 @@ if __name__ == "__main__":
     headless = settings["extra"]["headless"]
     split_tabs = settings["extra"]["split_tabs"]
     profile = settings["extra"]["profile"]
+    browser = settings["extra"]["browser"]
 
     yt_urls = input_youtube_links(download_playlist)
     uc.loop().run_until_complete(
@@ -115,5 +117,6 @@ if __name__ == "__main__":
             headless,
             split_tabs,
             profile,
+            browser,
         )
     )

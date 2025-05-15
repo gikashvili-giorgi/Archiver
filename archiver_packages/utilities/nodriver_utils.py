@@ -10,19 +10,44 @@ def kill_process(process_name: str) -> None:
     if process_name in (p.name() for p in process_iter()):
         os.system(f"taskkill /f /im {process_name}")
 
-async def nodriver_setup(profile: str, headless: bool):
-    """Set up a nodriver Chrome instance with the specified profile."""
-    program_files = "Program Files" if "Google" in os.listdir("C:\\Program Files") else "Program Files (x86)"
+async def nodriver_setup(profile:str, browser:str, headless: bool):
+
     pc_user = os.getlogin()
-    kill_process("chrome.exe")
+    
+    if browser == "Brave":
+        program_files = "Program Files" if "BraveSoftware" in os.listdir("C:\\Program Files") else "Program Files (x86)"
+        user_data_dir=rf"C:\Users\{pc_user}\AppData\Local\BraveSoftware\Brave-Browser\User Data"
+        browser_executable_path=f"C:\\{program_files}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+        process_name = "brave.exe"
+    elif browser == "Chrome":
+        program_files = "Program Files" if "Google" in os.listdir("C:\\Program Files") else "Program Files (x86)"
+        user_data_dir=rf"C:\Users\{pc_user}\AppData\Local\Google\Chrome\User Data"
+        browser_executable_path=f"C:\\{program_files}\\Google\\Chrome\\Application\\chrome.exe"
+        process_name = "chrome.exe"
+    elif browser == "Edge":
+        program_files = "Program Files" if "Edge" in os.listdir("C:\\Program Files\\Microsoft") else "Program Files (x86)"
+        user_data_dir=rf"C:\Users\{pc_user}\AppData\Local\Microsoft\Edge\User Data"
+        browser_executable_path=f"C:\\{program_files}\\Microsoft\\Edge\\Application\\msedge.exe"
+        process_name = "msedge.exe"
+    else:
+        print("Invalid browser name")
+        return
+
+    # Kill all chrome.exe processes to avoid chromedriver window already closed exception
+    kill_process(process_name)
+
     driver = await uc.start(
         headless=headless,
-        user_data_dir=rf"C:\Users\{pc_user}\AppData\Local\Google\Chrome\User Data",  # by specifying it, it won't be automatically cleaned up when finished
-        browser_executable_path=f"C:\\{program_files}\\Google\\Chrome\\Application\\chrome.exe",
+        user_data_dir=user_data_dir, # by specifying it, it won't be automatically cleaned up when finished
+        browser_executable_path=browser_executable_path,
         browser_args=[
             f'--profile-directory={profile}',
             "--mute-audio",
-            "--disable-notifications"
+            "--disable-notifications",
+            "--no-first-run",
+            "--no-service-autorun",
+            "--password-store=basic",
+            "--hide-crash-restore-bubble",
             ],
         lang="en-US"
     )

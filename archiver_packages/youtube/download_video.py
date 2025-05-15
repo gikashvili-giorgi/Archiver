@@ -78,7 +78,7 @@ def download_videos_with_info(video_urls: list, output_directory: str, skip_down
     info_list = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         for video_url in video_urls:
-            info = ydl.extract_info(video_url, download=True)
+            info = ydl.extract_info(video_url)
             info_list.append(info)
     return info_list
 
