@@ -137,8 +137,11 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
         list: List of loaded comment elements.
     """
     sleep(delay() + 2)
-    activate_btn = await tab.select("#owner-sub-count")
-    await activate_dialog_window(activate_btn, delay)
+    try:
+        activate_btn = await tab.select("#owner-sub-count")
+        await activate_dialog_window(activate_btn, delay)
+    except:
+        pass
     sleep(delay() + 2)
     await scroll_until_elements_loaded(
         tab=tab,

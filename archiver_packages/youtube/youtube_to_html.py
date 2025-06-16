@@ -145,12 +145,14 @@ async def parse_to_html(
         # Extract the relevant pieces of information
         video_title = info.get('title', None)
         video_views = info.get('view_count', None)
+        video_views = "" if video_views is None else f'{video_views:,}'
         channel_author = info.get('uploader', None)
         channel_url = info.get('uploader_url', "Channel URL not found")
         video_publish_date = info.get('upload_date', None)
         channel_keywords = info.get('tags', None)
         channel_description = info.get('description', None)
         subscribers = info.get('channel_follower_count', None)
+        subscribers = "" if subscribers is None else f'{subscribers:,} subscribers'
         like_count = info.get('like_count', None)
         dislike_count = info.get('dislike_count', None)
         comment_count = info.get('comment_count', None)
@@ -173,13 +175,13 @@ async def parse_to_html(
                     output_file.write(
                         line.replace('REPLACE_TITLE', video_title)
                         .replace('TITLE_URL', yt_url)
-                        .replace('NUMBER_OF_VIEWS', f'{video_views:,}')
+                        .replace('NUMBER_OF_VIEWS', video_views)
                         .replace('CHANNEL_AUTHOR', channel_author)
                         .replace('CHANNEL_URL', channel_url)
                         .replace('PUBLISH_DATE', f'{video_publish_date}')
                         .replace('CHANNEL_KEYWORDS', f'{channel_keywords}')
                         .replace('CHANNEL_DESCRIPTION', channel_description)
-                        .replace('CHANNEL_SUBSCRIBERS', f'{subscribers:,} subscribers')
+                        .replace('CHANNEL_SUBSCRIBERS', subscribers)
                         .replace('PROFILE_IMAGE_LINK', profile_image)
                         .replace('LIKE_COUNT', like_count)
                         .replace('DISLIKES_COUNT', dislike_count)

@@ -33,7 +33,8 @@ def input_youtube_links(download_playlist: bool) -> list[str]:
                 break
             if link not in yt_links:
                 if download_playlist is False:
-                    yt_links.append(link.split("&")[0])
+                    link = link.split("&")[0]
+                    yt_links.append(link)
                 else:
                     yt_links.append(link)
             clear()
