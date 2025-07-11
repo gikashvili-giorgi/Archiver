@@ -147,7 +147,8 @@ async def parse_to_html(
         video_views = info.get('view_count', None)
         video_views = "" if video_views is None else f'{video_views:,}'
         channel_author = info.get('uploader', None)
-        channel_url = info.get('uploader_url', "Channel URL not found")
+        channel_url = info.get('uploader_url', None)
+        channel_url = "Channel URL not found" if channel_url is None else channel_url
         video_publish_date = info.get('upload_date', None)
         channel_keywords = info.get('tags', None)
         channel_description = info.get('description', None)
