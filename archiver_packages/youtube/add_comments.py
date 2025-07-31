@@ -6,7 +6,7 @@ from time import sleep
 from typing import Callable
 from selectolax.parser import HTMLParser
 from bs4 import BeautifulSoup
-from archiver_packages.utilities.nodriver_utils import slow_croll, page_scroll, scroll_until_elements_loaded, activate_dialog_window
+from archiver_packages.utilities.nodriver_utils import slow_scroll, page_scroll, scroll_until_elements_loaded, activate_dialog_window
 from archiver_packages.youtube.extract_comment_emoji import convert_youtube_emoji_url_to_emoji
 import archiver_packages.youtube_html_elements as youtube_html_elements
 
@@ -136,6 +136,10 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
     Returns:
         list: List of loaded comment elements.
     """
+
+    # Remove element with javascript function
+    # await tab.apply("document.querySelector('#related').remove()")
+
     sleep(delay() + 2)
     try:
         activate_btn = await tab.select("#owner-sub-count")
@@ -154,11 +158,10 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
     while True:
         if await page_scroll(tab, delay) == "page_end":
             page_end_count += 1
-            if page_end_count > 3:
-                break
             if page_end_count > 2:
-                sleep(delay() + 1)
-                await slow_croll(tab, delay)
+                break
+            sleep(delay() + 1)
+            await slow_scroll(tab, delay)
         else:
             page_end_count = 0
         comments = await tab.select_all('#contents ytd-comment-thread-renderer')
@@ -219,7 +222,7 @@ async def expand_all_comments(tab, delay: Callable[[int], float]):
         sleep(delay() + 1)
         await button.click()
         sleep(delay() + 2)
-        await slow_croll(tab, delay)
+        await slow_scroll(tab, delay)
         sleep(delay() + 2)
     while True:
         show_more_replies = await tab.select_all("button[aria-label='Show more replies']")
@@ -230,7 +233,7 @@ async def expand_all_comments(tab, delay: Callable[[int], float]):
             sleep(delay() + 1)
             await button.click()
             sleep(delay() + 2)
-            await slow_croll(tab, delay)
+            await slow_scroll(tab, delay)
             sleep(delay() + 4)
 
 async def add_comments(
@@ -256,7 +259,7 @@ async def add_comments(
         delay (Callable): Delay function.
         max_comments (int): Maximum number of comments to fetch.
     """
-    await slow_croll(tab, delay)
+    await slow_scroll(tab, delay)
     logging.info("Loading comments...")
     print("[DEBUG] Calling load_all_comments...")
     loaded_comments = await load_all_comments(tab, delay, max_comments, comment_count)
@@ -266,7 +269,7 @@ async def add_comments(
     print("[DEBUG] Expanding all comments...")
     await expand_all_comments(tab, delay)
 
-    #get html from tab
+    # Get html from tab
     print("[DEBUG] Getting HTML from tab...")
     tab_html = await tab.get_content()
     print(f"[DEBUG] tab.get_html() type: {type(tab_html)}, length: {len(tab_html) if tab_html else 'None'}")
@@ -274,7 +277,7 @@ async def add_comments(
         print("[ERROR] tab.get_html() returned None or empty string!")
         logging.error("tab.get_html() returned None or empty string!")
         return
-    #parse html with selectolax
+    # Parse html with selectolax
     try:
         tab_html = HTMLParser(tab_html)
         print("[DEBUG] HTMLParser successfully parsed tab_html.")
@@ -282,7 +285,7 @@ async def add_comments(
         print(f"[ERROR] HTMLParser failed: {e}\n{traceback.format_exc()}")
         logging.error(f"HTMLParser failed: {e}\n{traceback.format_exc()}")
         return
-    # get all comments
+    # Get all comments
     comments = tab_html.css('#contents ytd-comment-thread-renderer')
     print(f"[DEBUG] Found {len(comments)} comment elements in HTML.")
     if not comments:

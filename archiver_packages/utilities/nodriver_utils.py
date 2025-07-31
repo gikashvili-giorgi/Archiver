@@ -66,7 +66,7 @@ async def get_nodriver_tab(driver, url: str, delay: Callable[[int], float], add_
         await split_window_size(tab, delay)
     return tab
 
-async def slow_croll(tab, delay: Callable[[int], float]) -> None:
+async def slow_scroll(tab, delay: Callable[[int], float]) -> None:
     """Scroll the page slowly."""
     for _ in range(3):
         scroll_amount = uniform(100, 120)

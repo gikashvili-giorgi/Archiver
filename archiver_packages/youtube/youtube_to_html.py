@@ -10,7 +10,7 @@ from typing import Callable
 import archiver_packages.youtube_html_elements as youtube_html_elements
 
 
-def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keywords: list, channel_description: str, like_count: int | None, dislike_count: int | None, comment_count: int) -> tuple:
+def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keywords: list, channel_description: str, like_count: int | None, dislike_count: int | None, comment_count: int, comments_status: bool) -> tuple:
     """
     Modify extracted YouTube video information.
 
@@ -21,7 +21,6 @@ def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keyword
         channel_description (str): Channel description.
         like_count (int | None): Number of likes.
         dislike_count (int | None): Number of dislikes.
-        comment_count (int): Number of comments.
 
     Returns:
         tuple: Modified YouTube video information.
@@ -71,12 +70,12 @@ def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keyword
         dislike_count = "DISLIKE"
 
     # Add comments tag
-    if comment_count is not None and comment_count != 0:
-        comment_count = f"{comment_count:,} Comments"
+    if comments_status:
+        comment_count_html_str = f"{comment_count:,} Comments"
     else:
-        comment_count = "Comments are turned off."
+        comment_count_html_str = "Comments are turned off."
 
-    return (yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count)
+    return (yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count_html_str)
 
 
 def get_html_output_dir(video_id: str, root_directory: str) -> str | None:
@@ -159,8 +158,6 @@ async def parse_to_html(
         comment_count = info.get('comment_count', None)
         comment_count = 0 if comment_count is None else comment_count
         video_id = info.get("id")
-        yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count_str = modify_exctracted_info(
-            yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count)
         html_output_directory = get_html_output_dir(video_id, output_directory)
         if html_output_directory is None:
             logging.error(f"Skipping video {video_title} due to missing output directory.")
@@ -170,8 +167,14 @@ async def parse_to_html(
             download_youtube_thumbnail(info, os.path.join(html_output_directory, f"{video_id}_thumbnail.jpg"))
             with open("./archiver_packages/youtube_html/index.html", 'rt', encoding="utf8") as input_file, \
                  open(f"{html_output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
+
                 # Scrape additional info
-                tab, profile_image = await scrape_info(driver, yt_url, delay, split_tabs)
+                tab, profile_image, comments_status = await scrape_info(driver, yt_url, delay, split_tabs)
+
+                # Modify extracted info
+                yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count_html_str = modify_exctracted_info(
+                    yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count, comments_status)
+                
                 for line in input_file:
                     output_file.write(
                         line.replace('REPLACE_TITLE', video_title)
@@ -186,7 +189,7 @@ async def parse_to_html(
                         .replace('PROFILE_IMAGE_LINK', profile_image)
                         .replace('LIKE_COUNT', like_count)
                         .replace('DISLIKES_COUNT', dislike_count)
-                        .replace('COMMENT_COUNT', f'{comment_count_str}')
+                        .replace('COMMENT_COUNT', comment_count_html_str)
                         .replace('VIDEO_SOURCE', f'media-extracted/{filename}')
                     )
                 if save_comments:

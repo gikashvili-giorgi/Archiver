@@ -1,10 +1,10 @@
 from selectolax.parser import HTMLParser
 from time import sleep
-from archiver_packages.utilities.nodriver_utils import slow_croll, get_nodriver_tab
+from archiver_packages.utilities.nodriver_utils import slow_scroll, get_nodriver_tab
 from archiver_packages.utilities.file_utils import download_file
 from typing import Callable
 
-async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split_tabs: bool):
+async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split_tabs: bool) -> tuple:
     """Scrape YouTube video info and profile image.
 
     Args:
@@ -12,9 +12,6 @@ async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split
         yt_link (str): The YouTube video link.
         delay (Callable[[int], float]): A callable to introduce delay.
         split_tabs (bool): Whether to split tabs.
-
-    Returns:
-        tuple: A tuple containing the tab and profile image URL.
     """
     tab = await get_nodriver_tab(
         driver=driver,
@@ -23,13 +20,24 @@ async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split
         add_tab_delay=2,
         split_tabs=split_tabs
     )
-    await slow_croll(tab, delay)
+    await slow_scroll(tab, delay)
     sleep(delay() + 2)
     driver_page_source = await tab.get_content()
     html = HTMLParser(driver_page_source, detect_encoding=True)
     profile_image = html.css_first('yt-img-shadow#avatar img').attributes.get("src")
     profile_image = profile_image.replace("s88-c-k", "s48-c-k") if profile_image else None
-    return tab, profile_image
+
+    comments_count_ele = html.css_first('h2#count')
+    if comments_count_ele:
+        comments_count_ele_text = comments_count_ele.text()
+        if "Comments are turned off" in comments_count_ele_text:
+            comments_status = False
+        else:
+            comments_status = True
+    else:
+        comments_status = True
+
+    return tab, profile_image, comments_status
 
 def download_youtube_thumbnail(info: dict, save_path: str) -> None:
     """Download the YouTube video thumbnail if available.
