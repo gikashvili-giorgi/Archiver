@@ -21,7 +21,7 @@ async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split
         split_tabs=split_tabs
     )
     await slow_scroll(tab, delay)
-    sleep(delay() + 2)
+    sleep(delay() + 1)
     driver_page_source = await tab.get_content()
     html = HTMLParser(driver_page_source, detect_encoding=True)
     profile_image = html.css_first('yt-img-shadow#avatar img').attributes.get("src")

@@ -123,7 +123,7 @@ def parse_comments(html: HTMLParser) -> tuple[str, str, str, str, str]:
     return like_count, channel_username, comment_date, channel_url, channel_pfp
 
 
-async def load_all_comments(tab, delay: Callable[[int], float], max_comments: int, comment_count: int):
+async def load_all_comments(tab, delay: Callable[[int], float], max_comments: int, comment_count: int) -> list:
     """
     Scroll to end of the page to load all comments.
 
@@ -137,8 +137,11 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
         list: List of loaded comment elements.
     """
 
-    # Remove element with javascript function
-    # await tab.apply("document.querySelector('#related').remove()")
+    if comment_count < 200:
+        try:
+            await tab.evaluate("document.querySelector('#related')?.remove();")
+        except Exception as e:
+            logging.warning(f"Could not remove #related element: {e}")
 
     sleep(delay() + 2)
     try:
@@ -244,7 +247,7 @@ async def add_comments(
     channel_author: str,
     output,
     delay: Callable[[int], float],
-    max_comments: int
+    max_comments: int,
 ) -> None:
     """
     Fetch and process YouTube comments, saving them to HTML and JSON.

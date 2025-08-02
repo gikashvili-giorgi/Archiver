@@ -71,7 +71,7 @@ async def slow_scroll(tab, delay: Callable[[int], float]) -> None:
     for _ in range(3):
         scroll_amount = uniform(100, 120)
         await tab.evaluate(f"window.scrollBy(0, {scroll_amount});")
-        sleep(delay() + 1)
+        sleep(delay())
 
 async def page_scroll(tab, delay: Callable[[int], float], add_delay: int = 0, end_key: bool = False) -> str | None:
     """Scroll the webpage. Return 'page_end' if reached the bottom."""

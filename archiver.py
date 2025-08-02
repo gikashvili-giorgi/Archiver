@@ -41,7 +41,7 @@ async def archiver(
     browser: str,
     # Optional parameters
     test_code: bool = False,
-    skip_download: bool = False,
+    skip_download: bool = False
 ) -> None:
     """
     Main archiver workflow: downloads videos, processes metadata, and generates HTML output.
