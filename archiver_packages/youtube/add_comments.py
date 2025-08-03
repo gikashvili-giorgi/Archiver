@@ -143,19 +143,20 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
         except Exception as e:
             logging.warning(f"Could not remove #related element: {e}")
 
-    sleep(delay() + 2)
+    sleep(delay() + 1)
     try:
         activate_btn = await tab.select("#owner-sub-count")
         await activate_dialog_window(activate_btn, delay)
     except:
         pass
-    sleep(delay() + 2)
+    sleep(delay() + 1)
+    extra_scrolls = 5 if comment_count < 200 else 0
     await scroll_until_elements_loaded(
         tab=tab,
         number_of_elements=comment_count,
         number_of_page_results=20,
         delay=delay,
-        extra_scrolls=5,
+        extra_scrolls=extra_scrolls,
     )
     page_end_count = 0
     while True:
@@ -163,7 +164,6 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
             page_end_count += 1
             if page_end_count > 2:
                 break
-            sleep(delay() + 1)
             await slow_scroll(tab, delay)
         else:
             page_end_count = 0

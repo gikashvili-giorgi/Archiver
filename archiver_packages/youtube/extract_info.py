@@ -27,7 +27,7 @@ async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split
     profile_image = html.css_first('yt-img-shadow#avatar img').attributes.get("src")
     profile_image = profile_image.replace("s88-c-k", "s48-c-k") if profile_image else None
 
-    comments_count_ele = html.css_first('h2#count')
+    comments_count_ele = html.css_first('#comments')
     if comments_count_ele:
         comments_count_ele_text = comments_count_ele.text()
         if "Comments are turned off" in comments_count_ele_text:
