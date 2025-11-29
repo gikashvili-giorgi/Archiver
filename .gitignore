@@ -60,7 +60,7 @@ venv/
 youtube_downloads*/
 
 # Test files
-tests/
+.tests/
 
 # Editor Configurations
 .idea/

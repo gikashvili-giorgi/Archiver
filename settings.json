@@ -6,7 +6,7 @@
     },
     "extra": {
         "delay": 1,
-        "headless": false,
+        "headless": true,
         "split_tabs": false,
         "profile": "Default",
         "browser": "Edge"
