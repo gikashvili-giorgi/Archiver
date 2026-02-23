@@ -3,10 +3,17 @@ from archiver_packages.utilities.utilities import clear
 from rich.console import Console
 from rich.table import Table
 
+COOKIES = {
+        "cookies": "cookies.txt",
+        "cookies-from-browser": "firefox",
+        "username": "...@gmail.com",
+        "password": "...",
+}
 
 def fetch_videos_info(video_url: str) -> dict:
     """Fetch metadata for a list of YouTube videos."""
     ydl_opts = {
+        # **COOKIES,
         'quiet': True,
         'no_warnings': True,
         'forcetitle': True,
@@ -64,6 +71,7 @@ def get_youtube_links_from_playlist_and_channel(playlist_link: str) -> list[str]
 def download_videos_with_info(video_urls: list, output_directory: str, skip_download: bool = False) -> list[dict]:
     """Download YouTube videos and return their metadata."""
     ydl_opts = {
+        # **COOKIES,
         'quiet': True,
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',
         'no_warnings': True,
@@ -85,6 +93,7 @@ def download_videos_with_info(video_urls: list, output_directory: str, skip_down
 
 def download_best_audio(url: str, output_directory: str) -> None:
     ydl_opts = {
+        # **COOKIES,
         'format': 'bestaudio/best',
         'outtmpl': f"{output_directory}/%(title)s [%(id)s].%(ext)s",
         'postprocessors': [{
