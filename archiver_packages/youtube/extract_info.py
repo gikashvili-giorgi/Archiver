@@ -17,15 +17,28 @@ async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split
         driver=driver,
         url=yt_link,
         delay=delay,
-        add_tab_delay=2,
+        add_tab_delay=3,
         split_tabs=split_tabs
     )
+
     await slow_scroll(tab, delay)
-    sleep(delay() + 1)
+    sleep(delay() + 5)
+
+    try:
+        profile_image_ele = await tab.select('yt-img-shadow#avatar')
+        await profile_image_ele.scroll_into_view()
+        sleep(delay() + 1)
+    except:
+        pass
+
     driver_page_source = await tab.get_content()
     html = HTMLParser(driver_page_source, detect_encoding=True)
-    profile_image = html.css_first('yt-img-shadow#avatar img').attributes.get("src")
-    profile_image = profile_image.replace("s88-c-k", "s48-c-k") if profile_image else None
+    profile_image_node = html.css_first('yt-img-shadow#avatar img')
+    profile_image = profile_image_node.attributes.get("src") if profile_image_node else ""
+    profile_image = profile_image.replace("s88-c-k", "s48-c-k") if profile_image else ""
+
+    if not profile_image:
+        print(f"Profile image not found for video: {yt_link}")
 
     comments_count_ele = html.css_first('#comments')
     if comments_count_ele:
