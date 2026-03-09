@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from archiver_packages.utilities.nodriver_utils import slow_scroll, page_scroll, scroll_until_elements_loaded, activate_dialog_window
 from archiver_packages.youtube.extract_comment_emoji import convert_youtube_emoji_url_to_emoji
 import archiver_packages.youtube_html_elements as youtube_html_elements
+import nodriver as uc
 
 
 logging.basicConfig(level=logging.INFO)
@@ -174,7 +175,7 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
     return comments
 
 
-async def check_for_pinned_comment(comment:HTMLParser, comments_fetched: int) -> bool:
+async def check_for_pinned_comment(comment: HTMLParser, comments_fetched: int) -> bool:
     """
     Check if the comment is pinned.
 
@@ -210,7 +211,7 @@ def save_comments_to_json_file(path: str, comments_list: list[dict]) -> None:
             logging.error(f"Error saving comments to {path}: {e}\n{traceback.format_exc()}")
 
 
-async def expand_all_comments(tab, delay: Callable[[int], float]):
+async def expand_all_comments(tab: uc.Tab, delay: Callable[[int], float]):
     """
     Expand all comments and replies on the page.
 
@@ -219,7 +220,7 @@ async def expand_all_comments(tab, delay: Callable[[int], float]):
         delay (Callable): Delay function.
     """
     logging.info("Expanding all comments...")
-    expand_buttons = await tab.select_all('#more-replies button')
+    expand_buttons = await tab.select_all('#more-replies-sub-thread button')
     for button in expand_buttons:
         await button.scroll_into_view()
         sleep(delay() + 1)
@@ -227,17 +228,25 @@ async def expand_all_comments(tab, delay: Callable[[int], float]):
         sleep(delay() + 2)
         await slow_scroll(tab, delay)
         sleep(delay() + 2)
+
+    show_more_replies_expanded_count = 0
+
     while True:
         show_more_replies = await tab.select_all("button[aria-label='Show more replies']")
-        if len(show_more_replies) == 0:
+        show_more_replies_count = len(show_more_replies)
+
+        if show_more_replies_expanded_count == show_more_replies_count:
             break
+
         for button in show_more_replies:
             await button.scroll_into_view()
             sleep(delay() + 1)
             await button.click()
+            show_more_replies_expanded_count += 1
             sleep(delay() + 2)
             await slow_scroll(tab, delay)
-            sleep(delay() + 4)
+            sleep(delay() + 3)
+
 
 async def add_comments(
     tab,
