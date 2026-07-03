@@ -2,6 +2,8 @@ import logging
 import traceback
 import urllib.parse
 import json
+import os
+from datetime import datetime, timezone
 from time import sleep
 from typing import Callable
 from selectolax.parser import HTMLParser
@@ -112,15 +114,44 @@ def parse_comments(html: HTMLParser) -> tuple[str, str, str, str, str]:
 
     Returns:
         tuple[str, str, str, str, str]: like_count, channel_username, comment_date, channel_url, channel_pfp
+
+    Raises:
+        ValueError: If a required element or attribute is missing from the comment HTML.
     """
-    like_count = html.css_first("[id='vote-count-middle']").text().strip()
-    channel_username = html.css_first("[id='author-text']").attributes.get("href")[1:]
-    channel_username = urllib.parse.unquote(channel_username)
-    comment_date = html.css_first("div[id='header-author'] span[id='published-time-text'] a").text().strip()
-    channel_url = html.css_first("div[id='main'] div a").attributes.get("href")
-    channel_url = "https://www.youtube.com" + channel_url
-    channel_pfp = html.css_first("yt-img-shadow [id='img']").attributes.get("src")
+    vote_count_ele = html.css_first("[id='vote-count-middle']")
+    if vote_count_ele is None:
+        raise ValueError("Missing element: vote-count-middle")
+    like_count = vote_count_ele.text().strip()
+
+    author_text_ele = html.css_first("[id='author-text']")
+    if author_text_ele is None:
+        raise ValueError("Missing element: author-text")
+    author_href = author_text_ele.attributes.get("href")
+    if author_href is None:
+        raise ValueError("Missing attribute 'href' on author-text element")
+    channel_username = urllib.parse.unquote(author_href[1:])
+
+    comment_date_ele = html.css_first("div[id='header-author'] span[id='published-time-text'] a")
+    if comment_date_ele is None:
+        raise ValueError("Missing element: published-time-text")
+    comment_date = comment_date_ele.text().strip()
+
+    channel_url_ele = html.css_first("div[id='main'] div a")
+    if channel_url_ele is None:
+        raise ValueError("Missing element: channel URL anchor")
+    channel_url_href = channel_url_ele.attributes.get("href")
+    if channel_url_href is None:
+        raise ValueError("Missing attribute 'href' on channel URL element")
+    channel_url = "https://www.youtube.com" + channel_url_href
+
+    channel_pfp_ele = html.css_first("yt-img-shadow [id='img']")
+    if channel_pfp_ele is None:
+        raise ValueError("Missing element: channel profile picture img")
+    channel_pfp = channel_pfp_ele.attributes.get("src")
+    if channel_pfp is None:
+        raise ValueError("Missing attribute 'src' on channel profile picture element")
     channel_pfp = channel_pfp.replace("s88-c-k", "s48-c-k")
+
     return like_count, channel_username, comment_date, channel_url, channel_pfp
 
 
@@ -311,82 +342,136 @@ async def add_comments(
     comments_count = len(comments)
     comments_fetched = 0
     comments_list = []
-    try:
-        for comment in comments:
-            comments_fetched += 1
-            logging.info(f"Fetched {comments_fetched}/{comments_count} comments.")
-            print(f"[DEBUG] Processing comment {comments_fetched}/{comments_count}")
+    failed_comments = []
+    for comment in comments:
+        comments_fetched += 1
+        logging.info(f"Fetched {comments_fetched}/{comments_count} comments.")
+        print(f"[DEBUG] Processing comment {comments_fetched}/{comments_count}")
+        try:
             is_comment_pinned = await check_for_pinned_comment(comment, comments_fetched)
             sleep(delay() + 1)
             text, styled_text = await parse_comment_text(comment)
             print(f"[DEBUG] Comment text: {text[:50]}...")
             like_count, channel_username, comment_date, channel_url, channel_pfp = parse_comments(comment)
             print(f"[DEBUG] like_count: {like_count}, channel_username: {channel_username}")
-            heart = comment.css_first('#creator-heart-button')
-            if heart:
-                heart = youtube_html_elements.heart(profile_image)
-            else:
-                heart = ""
-            comment_box = youtube_html_elements.comment_box(
-                channel_url, channel_pfp, channel_username, channel_author, comment_date, styled_text, like_count, heart, is_comment_pinned
-            )
-            divs = youtube_html_elements.ending.divs
-            author_heart = bool(heart)
-            comment_dict = {
-                "text": text,
-                "like_count": like_count,
-                "channel_username": channel_username,
-                "comment_date": comment_date,
-                "channel_url": channel_url,
-                "channel_pfp": channel_pfp,
-                "author_heart": author_heart,
-                "replies": []
-            }
-            replies_btn = comment.css("#more-replies button")
-            if len(replies_btn) == 0:
-                comment_box += divs
-                output.write(comment_box)
-            else:
-                reply_count = comment.css_first("[id='more-replies'] button")
+        except Exception as e:
+            error_msg = f"{type(e).__name__}: {e}"
+            logging.warning(f"Skipping comment {comments_fetched}/{comments_count}: {error_msg}")
+            print(f"[WARNING] Skipping comment {comments_fetched}/{comments_count}: {error_msg}")
+            # Try to extract raw text for the debug log
+            raw_text = ""
+            try:
+                text_ele = comment.css_first('#content-text')
+                if text_ele:
+                    raw_text = text_ele.text().strip()
+            except Exception:
+                raw_text = "<could not extract text>"
+            failed_comments.append({
+                "comment_number": comments_fetched,
+                "total_comments": comments_count,
+                "type": "comment",
+                "comment_text": raw_text,
+                "error": error_msg,
+                "traceback": traceback.format_exc(),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            continue
+        heart = comment.css_first('#creator-heart-button')
+        if heart:
+            heart = youtube_html_elements.heart(profile_image)
+        else:
+            heart = ""
+        comment_box = youtube_html_elements.comment_box(
+            channel_url, channel_pfp, channel_username, channel_author, comment_date, styled_text, like_count, heart, is_comment_pinned
+        )
+        divs = youtube_html_elements.ending.divs
+        author_heart = bool(heart)
+        comment_dict = {
+            "text": text,
+            "like_count": like_count,
+            "channel_username": channel_username,
+            "comment_date": comment_date,
+            "channel_url": channel_url,
+            "channel_pfp": channel_pfp,
+            "author_heart": author_heart,
+            "replies": []
+        }
+        replies_btn = comment.css("#more-replies button")
+        if len(replies_btn) == 0:
+            comment_box += divs
+            output.write(comment_box)
+        else:
+            reply_count = comment.css_first("[id='more-replies'] button")
+            try:
+                reply_count = reply_count.attributes.get("aria-label")
+            except Exception as ex:
+                logging.warning(f"Could not get aria-label for reply count: {ex}")
+                reply_count = reply_count.text()
+            replies_toggle = youtube_html_elements.replies_toggle(reply_count)
+            comment_box += replies_toggle + divs
+            output.write(comment_box)
+            sleep(delay())
+            replies = comment.css('div[id="expander"] div[id="expander-contents"] #body')
+            print(f"[DEBUG] Found {len(replies)} replies for comment {comments_fetched}")
+            for reply_index, reply in enumerate(replies, start=1):
                 try:
-                    reply_count = reply_count.attributes.get("aria-label")
-                except Exception as ex:
-                    logging.warning(f"Could not get aria-label for reply count: {ex}")
-                    reply_count = reply_count.text()
-                replies_toggle = youtube_html_elements.replies_toggle(reply_count)
-                comment_box += replies_toggle + divs
-                output.write(comment_box)
-                sleep(delay())
-                replies = comment.css('div[id="expander"] div[id="expander-contents"] #body')
-                print(f"[DEBUG] Found {len(replies)} replies for comment {comments_fetched}")
-                for reply in replies:
                     sleep(delay() + 1)
                     text, styled_text = await parse_comment_text(reply)
                     styled_text = style_reply_mention(styled_text)
                     like_count, channel_username, comment_date, channel_url, channel_pfp = parse_comments(reply)
-                    heart = reply.css_first('#creator-heart-button')
-                    if heart:
-                        heart = youtube_html_elements.heart(profile_image)
-                    else:
-                        heart = ""
-                    reply_box = youtube_html_elements.reply_box(
-                        channel_url, channel_pfp, channel_username, comment_date, styled_text, like_count, heart
-                    )
-                    output.write(reply_box)
-                    author_heart = bool(heart)
-                    reply_dict = {
-                        "text": text,
-                        "like_count": like_count,
-                        "channel_username": channel_username,
-                        "comment_date": comment_date,
-                        "channel_url": channel_url,
-                        "channel_pfp": channel_pfp,
-                        "author_heart": author_heart
-                    }
-                    comment_dict["replies"].append(reply_dict)
-            comments_list.append(comment_dict)
-        print(f"[DEBUG] Saving {len(comments_list)} comments to JSON file...")
-        save_comments_to_json_file(f"{output_directory}/comments.json", comments_list)
-    except Exception as e:
-        logging.error(f"Error while fetching comments: {e}\n{traceback.format_exc()}")
-        print(f"[ERROR] Exception occurred: {e}\n{traceback.format_exc()}")
+                except Exception as e:
+                    error_msg = f"{type(e).__name__}: {e}"
+                    logging.warning(f"Skipping reply {reply_index} of comment {comments_fetched}: {error_msg}")
+                    print(f"[WARNING] Skipping reply {reply_index} of comment {comments_fetched}: {error_msg}")
+                    raw_text = ""
+                    try:
+                        text_ele = reply.css_first('#content-text')
+                        if text_ele:
+                            raw_text = text_ele.text().strip()
+                    except Exception:
+                        raw_text = "<could not extract text>"
+                    failed_comments.append({
+                        "comment_number": comments_fetched,
+                        "total_comments": comments_count,
+                        "type": "reply",
+                        "reply_index": reply_index,
+                        "comment_text": raw_text,
+                        "error": error_msg,
+                        "traceback": traceback.format_exc(),
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    })
+                    continue
+                heart = reply.css_first('#creator-heart-button')
+                if heart:
+                    heart = youtube_html_elements.heart(profile_image)
+                else:
+                    heart = ""
+                reply_box = youtube_html_elements.reply_box(
+                    channel_url, channel_pfp, channel_username, comment_date, styled_text, like_count, heart
+                )
+                output.write(reply_box)
+                author_heart = bool(heart)
+                reply_dict = {
+                    "text": text,
+                    "like_count": like_count,
+                    "channel_username": channel_username,
+                    "comment_date": comment_date,
+                    "channel_url": channel_url,
+                    "channel_pfp": channel_pfp,
+                    "author_heart": author_heart
+                }
+                comment_dict["replies"].append(reply_dict)
+        comments_list.append(comment_dict)
+    print(f"[DEBUG] Saving {len(comments_list)} comments to JSON file...")
+    save_comments_to_json_file(f"{output_directory}/comments.json", comments_list)
+
+    # Save failed comments debug log if any failures occurred
+    if failed_comments:
+        debug_path = os.path.join(output_directory, "failed_comments_debug.json")
+        logging.warning(f"{len(failed_comments)} comment(s) failed to parse. Saving debug log to: {debug_path}")
+        print(f"[WARNING] {len(failed_comments)} comment(s) failed to parse. Debug log: {debug_path}")
+        try:
+            with open(debug_path, "w", encoding="utf-8") as f:
+                json.dump(failed_comments, f, indent=4, ensure_ascii=False)
+        except (OSError, TypeError) as e:
+            logging.error(f"Error saving failed comments debug log: {e}")
