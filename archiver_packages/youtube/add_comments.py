@@ -146,11 +146,15 @@ def parse_comments(html: HTMLParser) -> tuple[str, str, str, str, str]:
 
     channel_pfp_ele = html.css_first("yt-img-shadow [id='img']")
     if channel_pfp_ele is None:
-        raise ValueError("Missing element: channel profile picture img")
-    channel_pfp = channel_pfp_ele.attributes.get("src")
-    if channel_pfp is None:
-        raise ValueError("Missing attribute 'src' on channel profile picture element")
-    channel_pfp = channel_pfp.replace("s88-c-k", "s48-c-k")
+        logging.warning("Missing element: channel profile picture img, defaulting to empty.")
+        channel_pfp = ""
+    else:
+        channel_pfp = channel_pfp_ele.attributes.get("src")
+        if channel_pfp is None:
+            logging.warning("Missing attribute 'src' on channel profile picture element, defaulting to empty.")
+            channel_pfp = ""
+        else:
+            channel_pfp = channel_pfp.replace("s88-c-k", "s48-c-k")
 
     return like_count, channel_username, comment_date, channel_url, channel_pfp
 
