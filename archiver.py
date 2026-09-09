@@ -54,6 +54,7 @@ async def archiver(
 
     # Extract yt urls from playlists and channels
     for yt_url in yt_urls[:]:
+        yt_url = yt_url.strip()
         if "&list=" in yt_url or "/@" in yt_url:
             extracted_urls = get_youtube_links_from_playlist_and_channel(yt_url)
             yt_urls.remove(yt_url)
