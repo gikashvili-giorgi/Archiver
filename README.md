@@ -52,6 +52,10 @@ Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading and [no
    pip install -r requirements.txt
    ```
    *On Windows, you can run `requirements.cmd` instead.*
+   Frequently update the installed modules by running `requirements.cmd` on Windows or:
+   ```sh
+   pip install --upgrade -r requirements.txt
+   ```
 3. **Install a supported browser:**
    - Choose and install one of these browsers:
      - Google Chrome
