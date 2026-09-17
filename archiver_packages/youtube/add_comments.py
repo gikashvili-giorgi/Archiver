@@ -207,7 +207,7 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
             page_end_count = 0
         comments = await tab.select_all('#contents ytd-comment-thread-renderer')
         comments_count = len(comments)
-        if comments_count > max_comments:
+        if max_comments > 0 and comments_count > max_comments:
             break
     return comments
 
@@ -320,7 +320,9 @@ async def add_comments_with_downloader(
         comment
         for comment in raw_comments
         if not _is_downloader_reply(comment)
-    ][:max_comments]
+    ]
+    if max_comments > 0:
+        top_level_comments = top_level_comments[:max_comments]
     selected_parent_ids = {
         _downloader_parent_id(comment)
         for comment in top_level_comments
@@ -488,7 +490,8 @@ async def _add_comments_with_webdriver(
         print("[ERROR] No comments found in HTML!")
         logging.error("No comments found in HTML!")
         return
-    comments = comments[:max_comments]
+    if max_comments > 0:
+        comments = comments[:max_comments]
 
     logging.info("Fetching comments...")
     print(f"[DEBUG] Processing up to {len(comments)} comments...")

@@ -71,7 +71,7 @@ Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading, [nodri
 Edit `settings.json` to control Archiver's behavior:
 
 - `youtube > save_comments`: `true` or `false` — Save YouTube comments
-- `youtube > max_comments`: Maximum number of comments to save (e.g., `1000`)
+- `youtube > max_comments`: Maximum number of comments to save (e.g., `1000`); set to `0` to save all comments
 - `youtube > webdriver_comment_extractor`: `false` (default) uses `youtube-comment-downloader`; set to `true` to use the nodriver browser extractor
 - `extra > delay`: Delay (in seconds) between actions (default: `1`)
 - `extra > headless`: Run Browser in headless mode (`true`/`false`)
