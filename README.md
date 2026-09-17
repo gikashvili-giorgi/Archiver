@@ -27,10 +27,10 @@ Save YouTube videos offline, complete with metadata, in an HTML interface that r
 ---
 
 ## How it Works
-Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading and [nodriver](https://github.com/ultrafunkamsterdam/nodriver) for browser automation. The workflow:
+Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading, [nodriver](https://github.com/ultrafunkamsterdam/nodriver) for browser automation, and [youtube-comment-downloader](https://github.com/egbertbouman/youtube-comment-downloader) for comments by default. The workflow:
 
 1. **Download Videos:** Uses yt-dlp to fetch videos and metadata
-2. **Collect Metadata:** Gathers video info, comments, and channel details
+2. **Collect Metadata:** Gathers video info and channel details with nodriver, then extracts comments with the configured comment extractor
 3. **Generate HTML:** Compiles everything into a browsable HTML file with assets
 
 ---
@@ -72,6 +72,7 @@ Edit `settings.json` to control Archiver's behavior:
 
 - `youtube > save_comments`: `true` or `false` — Save YouTube comments
 - `youtube > max_comments`: Maximum number of comments to save (e.g., `1000`)
+- `youtube > webdriver_comment_extractor`: `false` (default) uses `youtube-comment-downloader`; set to `true` to use the nodriver browser extractor
 - `extra > delay`: Delay (in seconds) between actions (default: `1`)
 - `extra > headless`: Run Browser in headless mode (`true`/`false`)
 - `extra > split_tabs`: Use separate tabs for each video (`true`/`false`)
@@ -94,7 +95,7 @@ python3 archiver.py
 
 *On Windows, you can use the `start.cmd` script for easy launch.*
 
-- The HTML output is saved in the `youtube_downloads` folder.
+- The output is saved in the `youtube_downloads` folder.
 - If you move the HTML file, also copy the `styles` folder and `assets` directory for full functionality.
 
 ---

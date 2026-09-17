@@ -3,6 +3,8 @@ import traceback
 import urllib.parse
 import json
 import os
+import asyncio
+from html import escape
 from datetime import datetime, timezone
 from time import sleep
 from typing import Callable
@@ -246,6 +248,153 @@ def save_comments_to_json_file(path: str, comments_list: list[dict]) -> None:
             logging.error(f"Error saving comments to {path}: {e}\n{traceback.format_exc()}")
 
 
+def get_comments_json_filename(webdriver_comment_extractor: bool) -> str:
+    """Return the JSON filename for the selected comment extractor."""
+    extractor_name = (
+        "webdriver_comment_extractor"
+        if webdriver_comment_extractor
+        else "youtube_comment_downloader"
+    )
+    return f"comments_{extractor_name}.json"
+
+
+def _fetch_comments_with_downloader(yt_url: str) -> list[dict]:
+    """Fetch comments and replies using youtube-comment-downloader."""
+    from youtube_comment_downloader import SORT_BY_POPULAR, YoutubeCommentDownloader
+
+    downloader = YoutubeCommentDownloader()
+    comments = downloader.get_comments_from_url(yt_url, sort_by=SORT_BY_POPULAR)
+    return list(comments or [])
+
+
+def _is_downloader_reply(comment: dict) -> bool:
+    """Identify a reply in the downloader's flat comment result."""
+    cid = str(comment.get("cid") or "")
+    return bool(comment.get("reply")) or "." in cid
+
+
+def _downloader_parent_id(comment: dict) -> str | None:
+    """Return the top-level comment ID associated with a downloader record."""
+    cid = str(comment.get("cid") or "")
+    return cid.split(".", 1)[0] if cid else None
+
+
+def _normalise_downloader_comment(comment: dict) -> dict:
+    """Convert a downloader record to Archiver's local comment schema."""
+    channel_id = str(comment.get("channel") or "")
+    channel_url = (
+        f"https://www.youtube.com/channel/{channel_id}" if channel_id else ""
+    )
+    channel_pfp = str(comment.get("photo") or "").replace("s88-c-k", "s48-c-k")
+
+    return {
+        "text": str(comment.get("text") or ""),
+        "like_count": str(comment.get("votes") or "0"),
+        "channel_username": str(comment.get("author") or ""),
+        "comment_date": str(comment.get("time") or ""),
+        "channel_url": channel_url,
+        "channel_pfp": channel_pfp,
+        "author_heart": bool(comment.get("heart")),
+    }
+
+
+def _downloader_comment_html_text(text: str, is_reply: bool = False) -> str:
+    """Escape downloader text before inserting it into the generated HTML."""
+    styled_text = escape(text or "", quote=False)
+    return style_reply_mention(styled_text) if is_reply else styled_text
+
+
+async def add_comments_with_downloader(
+    yt_url: str,
+    output_directory: str,
+    profile_image: str,
+    channel_author: str,
+    output,
+    max_comments: int,
+) -> None:
+    """Fetch comments/replies without browser automation and write both outputs."""
+    logging.info("Fetching comments with youtube-comment-downloader...")
+    raw_comments = await asyncio.to_thread(_fetch_comments_with_downloader, yt_url)
+
+    top_level_comments = [
+        comment
+        for comment in raw_comments
+        if not _is_downloader_reply(comment)
+    ][:max_comments]
+    selected_parent_ids = {
+        _downloader_parent_id(comment)
+        for comment in top_level_comments
+        if _downloader_parent_id(comment)
+    }
+    replies_by_parent: dict[str, list[dict]] = {}
+    for comment in raw_comments:
+        if not _is_downloader_reply(comment):
+            continue
+        parent_id = _downloader_parent_id(comment)
+        if parent_id in selected_parent_ids:
+            replies_by_parent.setdefault(parent_id, []).append(comment)
+
+    comments_list = []
+    for comment in top_level_comments:
+        parent_id = _downloader_parent_id(comment)
+        replies = replies_by_parent.get(parent_id, [])
+        comment_data = _normalise_downloader_comment(comment)
+        comment_data["replies"] = [
+            _normalise_downloader_comment(reply) for reply in replies
+        ]
+
+        heart = (
+            youtube_html_elements.heart(profile_image)
+            if comment_data["author_heart"]
+            else ""
+        )
+        styled_text = _downloader_comment_html_text(comment_data["text"])
+        comment_box = youtube_html_elements.comment_box(
+            comment_data["channel_url"],
+            comment_data["channel_pfp"],
+            comment_data["channel_username"],
+            channel_author,
+            comment_data["comment_date"],
+            styled_text,
+            comment_data["like_count"],
+            heart,
+            False,
+        )
+        if replies:
+            comment_box += youtube_html_elements.replies_toggle(
+                f"View {len(replies)} replies"
+            )
+        comment_box += youtube_html_elements.ending.divs
+        output.write(comment_box)
+
+        for reply, reply_data in zip(replies, comment_data["replies"]):
+            reply_heart = (
+                youtube_html_elements.heart(profile_image)
+                if reply_data["author_heart"]
+                else ""
+            )
+            reply_box = youtube_html_elements.reply_box(
+                reply_data["channel_url"],
+                reply_data["channel_pfp"],
+                reply_data["channel_username"],
+                reply_data["comment_date"],
+                _downloader_comment_html_text(reply_data["text"], is_reply=True),
+                reply_data["like_count"],
+                reply_heart,
+            )
+            output.write(reply_box)
+
+        comments_list.append(comment_data)
+
+    save_comments_to_json_file(
+        os.path.join(
+            output_directory,
+            get_comments_json_filename(webdriver_comment_extractor=False),
+        ),
+        comments_list,
+    )
+
+
 async def expand_all_comments(tab: uc.Tab, delay: Callable[[int], float]):
     """
     Expand all comments and replies on the page.
@@ -283,7 +432,7 @@ async def expand_all_comments(tab: uc.Tab, delay: Callable[[int], float]):
             sleep(delay() + 3)
 
 
-async def add_comments(
+async def _add_comments_with_webdriver(
     tab,
     output_directory: str,
     profile_image: str,
@@ -294,7 +443,7 @@ async def add_comments(
     max_comments: int,
 ) -> None:
     """
-    Fetch and process YouTube comments, saving them to HTML and JSON.
+    Fetch and process YouTube comments with nodriver, saving them to HTML and JSON.
 
     Args:
         tab: The browser tab object.
@@ -467,7 +616,13 @@ async def add_comments(
                 comment_dict["replies"].append(reply_dict)
         comments_list.append(comment_dict)
     print(f"[DEBUG] Saving {len(comments_list)} comments to JSON file...")
-    save_comments_to_json_file(f"{output_directory}/comments.json", comments_list)
+    save_comments_to_json_file(
+        os.path.join(
+            output_directory,
+            get_comments_json_filename(webdriver_comment_extractor=True),
+        ),
+        comments_list,
+    )
 
     # Save failed comments debug log if any failures occurred
     if failed_comments:
@@ -479,3 +634,42 @@ async def add_comments(
                 json.dump(failed_comments, f, indent=4, ensure_ascii=False)
         except (OSError, TypeError) as e:
             logging.error(f"Error saving failed comments debug log: {e}")
+
+
+async def add_comments(
+    tab,
+    output_directory: str,
+    profile_image: str,
+    comment_count: int,
+    channel_author: str,
+    output,
+    delay: Callable[[int], float],
+    max_comments: int,
+    yt_url: str = "",
+    webdriver_comment_extractor: bool = False,
+) -> None:
+    """Extract comments using the configured backend and write both outputs."""
+    if webdriver_comment_extractor:
+        await _add_comments_with_webdriver(
+            tab,
+            output_directory,
+            profile_image,
+            comment_count,
+            channel_author,
+            output,
+            delay,
+            max_comments,
+        )
+        return
+
+    if not yt_url:
+        raise ValueError("yt_url is required for youtube-comment-downloader")
+
+    await add_comments_with_downloader(
+        yt_url=yt_url,
+        output_directory=output_directory,
+        profile_image=profile_image,
+        channel_author=channel_author,
+        output=output,
+        max_comments=max_comments,
+    )

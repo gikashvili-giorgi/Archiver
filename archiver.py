@@ -41,7 +41,8 @@ async def archiver(
     browser: str,
     # Optional parameters
     test_code: bool = False,
-    skip_download: bool = False
+    skip_download: bool = False,
+    webdriver_comment_extractor: bool = False,
 ) -> None:
     """
     Main archiver workflow: downloads videos, processes metadata, and generates HTML output.
@@ -90,7 +91,16 @@ async def archiver(
         return
 
     await parse_to_html(
-        output_directory, yt_urls, files, info_list, driver, delay, save_comments, max_comments, split_tabs
+        output_directory,
+        yt_urls,
+        files,
+        info_list,
+        driver,
+        delay,
+        save_comments,
+        max_comments,
+        split_tabs,
+        webdriver_comment_extractor=webdriver_comment_extractor,
     )
     driver.stop()
     logging.info("Completed.")
@@ -101,6 +111,9 @@ if __name__ == "__main__":
     settings = load_settings()
     save_comments = settings["youtube"]["save_comments"]
     max_comments = settings["youtube"]["max_comments"]
+    webdriver_comment_extractor = settings["youtube"].get(
+        "webdriver_comment_extractor", False
+    )
     download_playlist = settings["youtube"]["download_playlist"]
     delay = settings["extra"]["delay"]
     headless = settings["extra"]["headless"]
@@ -119,5 +132,6 @@ if __name__ == "__main__":
             split_tabs,
             profile,
             browser,
+            webdriver_comment_extractor=webdriver_comment_extractor,
         )
     )

@@ -123,7 +123,8 @@ async def parse_to_html(
     delay: Callable[[int], float],
     save_comments: bool,
     max_comments: int,
-    split_tabs: bool
+    split_tabs: bool,
+    webdriver_comment_extractor: bool = False,
 ) -> None:
     """
     Parse YouTube video information to HTML.
@@ -138,6 +139,8 @@ async def parse_to_html(
         save_comments (bool): Whether to save comments.
         max_comments (int): Maximum number of comments to save.
         split_tabs (bool): Whether to split tabs.
+        webdriver_comment_extractor (bool): Use nodriver instead of
+            youtube-comment-downloader for comment extraction.
     """
     for (yt_url, file, info) in zip(yt_urls, files, info_list):
         filename = os.path.basename(file)
@@ -193,7 +196,18 @@ async def parse_to_html(
                         .replace('VIDEO_SOURCE', f'media-extracted/{filename}')
                     )
                 if save_comments:
-                    await add_comments(tab, html_output_directory, profile_image, comment_count, channel_author, output_file, delay, max_comments)
+                    await add_comments(
+                        tab,
+                        html_output_directory,
+                        profile_image,
+                        comment_count,
+                        channel_author,
+                        output_file,
+                        delay,
+                        max_comments,
+                        yt_url=yt_url,
+                        webdriver_comment_extractor=webdriver_comment_extractor,
+                    )
                 output_file.write(youtube_html_elements.ending.html_end)
                 logging.info(f"HTML file created for {video_title}")
         except Exception as e:

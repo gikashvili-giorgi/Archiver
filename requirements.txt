@@ -5,3 +5,4 @@ yt-dlp[default]>=2026.8.19
 selectolax
 beautifulsoup4
 rich
+youtube-comment-downloader

@@ -2,6 +2,7 @@
     "youtube": {
         "save_comments": true,
         "max_comments": 1000,
+        "webdriver_comment_extractor": false,
         "download_playlist": false
     },
     "extra": {
