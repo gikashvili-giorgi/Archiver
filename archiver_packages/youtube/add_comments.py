@@ -8,8 +8,8 @@ from html import escape
 from datetime import datetime, timezone
 from time import sleep
 from typing import Callable
-from selectolax.parser import HTMLParser
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from archiver_packages.utilities.nodriver_utils import slow_scroll, page_scroll, scroll_until_elements_loaded, activate_dialog_window
 from archiver_packages.youtube.extract_comment_emoji import convert_youtube_emoji_url_to_emoji
 import archiver_packages.youtube_html_elements as youtube_html_elements
@@ -39,7 +39,7 @@ def format_text_emoji(input_text: str) -> str:
     return '\n'.join(merged_lines)
 
 
-async def parse_comment_text(comment_ele:HTMLParser) -> tuple[str, str]:
+async def parse_comment_text(comment_ele: Tag) -> tuple[str, str]:
     """
     Parse comments/replies text and return both plain and styled text.
 
@@ -49,8 +49,8 @@ async def parse_comment_text(comment_ele:HTMLParser) -> tuple[str, str]:
     Returns:
         tuple[str, str]: Plain text and styled text.
     """
-    text_ele = comment_ele.css_first('#content-text')
-    text_ele_html = text_ele.html
+    text_ele = comment_ele.select_one('#content-text')
+    text_ele_html = text_ele.decode_contents()
     soup = BeautifulSoup(text_ele_html, 'html.parser')
     # Replace <img> tags with emoji
     for img_ele in soup.find_all(lambda tag: tag.name == "img" and tag.has_attr('src') and "emoji" in tag["src"]):
@@ -107,12 +107,12 @@ def style_reply_mention(input_text: str) -> str:
     return input_text
 
 
-def parse_comments(html: HTMLParser) -> tuple[str, str, str, str, str]:
+def parse_comments(html: Tag) -> tuple[str, str, str, str, str]:
     """
     Parse comment HTML and extract like count, username, date, channel URL, and profile picture.
 
     Args:
-        html (HTMLParser): The HTML parser object for the comment.
+        html (Tag): The BeautifulSoup tag for the comment.
 
     Returns:
         tuple[str, str, str, str, str]: like_count, channel_username, comment_date, channel_url, channel_pfp
@@ -120,38 +120,38 @@ def parse_comments(html: HTMLParser) -> tuple[str, str, str, str, str]:
     Raises:
         ValueError: If a required element or attribute is missing from the comment HTML.
     """
-    vote_count_ele = html.css_first("[id='vote-count-middle']")
+    vote_count_ele = html.select_one("[id='vote-count-middle']")
     if vote_count_ele is None:
         raise ValueError("Missing element: vote-count-middle")
-    like_count = vote_count_ele.text().strip()
+    like_count = vote_count_ele.get_text().strip()
 
-    author_text_ele = html.css_first("[id='author-text']")
+    author_text_ele = html.select_one("[id='author-text']")
     if author_text_ele is None:
         raise ValueError("Missing element: author-text")
-    author_href = author_text_ele.attributes.get("href")
+    author_href = author_text_ele.get("href")
     if author_href is None:
         raise ValueError("Missing attribute 'href' on author-text element")
     channel_username = urllib.parse.unquote(author_href[1:])
 
-    comment_date_ele = html.css_first("div[id='header-author'] span[id='published-time-text'] a")
+    comment_date_ele = html.select_one("div[id='header-author'] span[id='published-time-text'] a")
     if comment_date_ele is None:
         raise ValueError("Missing element: published-time-text")
-    comment_date = comment_date_ele.text().strip()
+    comment_date = comment_date_ele.get_text().strip()
 
-    channel_url_ele = html.css_first("div[id='main'] div a")
+    channel_url_ele = html.select_one("div[id='main'] div a")
     if channel_url_ele is None:
         raise ValueError("Missing element: channel URL anchor")
-    channel_url_href = channel_url_ele.attributes.get("href")
+    channel_url_href = channel_url_ele.get("href")
     if channel_url_href is None:
         raise ValueError("Missing attribute 'href' on channel URL element")
     channel_url = "https://www.youtube.com" + channel_url_href
 
-    channel_pfp_ele = html.css_first("yt-img-shadow [id='img']")
+    channel_pfp_ele = html.select_one("yt-img-shadow [id='img']")
     if channel_pfp_ele is None:
         logging.warning("Missing element: channel profile picture img, defaulting to empty.")
         channel_pfp = ""
     else:
-        channel_pfp = channel_pfp_ele.attributes.get("src")
+        channel_pfp = channel_pfp_ele.get("src")
         if channel_pfp is None:
             logging.warning("Missing attribute 'src' on channel profile picture element, defaulting to empty.")
             channel_pfp = ""
@@ -212,7 +212,7 @@ async def load_all_comments(tab, delay: Callable[[int], float], max_comments: in
     return comments
 
 
-async def check_for_pinned_comment(comment: HTMLParser, comments_fetched: int) -> bool:
+async def check_for_pinned_comment(comment: Tag, comments_fetched: int) -> bool:
     """
     Check if the comment is pinned.
 
@@ -225,7 +225,7 @@ async def check_for_pinned_comment(comment: HTMLParser, comments_fetched: int) -
     """
     is_comment_pinned = False
     if comments_fetched == 1:
-        pinned_comment_elements = comment.css("ytd-pinned-comment-badge-renderer")
+        pinned_comment_elements = comment.select("ytd-pinned-comment-badge-renderer")
         if len(pinned_comment_elements) > 0:
             is_comment_pinned = True
     return is_comment_pinned
@@ -475,16 +475,16 @@ async def _add_comments_with_webdriver(
         print("[ERROR] tab.get_html() returned None or empty string!")
         logging.error("tab.get_html() returned None or empty string!")
         return
-    # Parse html with selectolax
+    # Parse HTML with BeautifulSoup
     try:
-        tab_html = HTMLParser(tab_html)
-        print("[DEBUG] HTMLParser successfully parsed tab_html.")
+        tab_html = BeautifulSoup(tab_html, "html.parser")
+        print("[DEBUG] BeautifulSoup successfully parsed tab_html.")
     except Exception as e:
-        print(f"[ERROR] HTMLParser failed: {e}\n{traceback.format_exc()}")
-        logging.error(f"HTMLParser failed: {e}\n{traceback.format_exc()}")
+        print(f"[ERROR] BeautifulSoup failed: {e}\n{traceback.format_exc()}")
+        logging.error(f"BeautifulSoup failed: {e}\n{traceback.format_exc()}")
         return
     # Get all comments
-    comments = tab_html.css('#contents ytd-comment-thread-renderer')
+    comments = tab_html.select('#contents ytd-comment-thread-renderer')
     print(f"[DEBUG] Found {len(comments)} comment elements in HTML.")
     if not comments:
         print("[ERROR] No comments found in HTML!")
@@ -517,9 +517,9 @@ async def _add_comments_with_webdriver(
             # Try to extract raw text for the debug log
             raw_text = ""
             try:
-                text_ele = comment.css_first('#content-text')
+                text_ele = comment.select_one('#content-text')
                 if text_ele:
-                    raw_text = text_ele.text().strip()
+                    raw_text = text_ele.get_text().strip()
             except Exception:
                 raw_text = "<could not extract text>"
             failed_comments.append({
@@ -532,7 +532,7 @@ async def _add_comments_with_webdriver(
                 "timestamp": datetime.now(timezone.utc).isoformat()
             })
             continue
-        heart = comment.css_first('#creator-heart-button')
+        heart = comment.select_one('#creator-heart-button')
         if heart:
             heart = youtube_html_elements.heart(profile_image)
         else:
@@ -552,22 +552,22 @@ async def _add_comments_with_webdriver(
             "author_heart": author_heart,
             "replies": []
         }
-        replies_btn = comment.css("#more-replies button")
+        replies_btn = comment.select("#more-replies button")
         if len(replies_btn) == 0:
             comment_box += divs
             output.write(comment_box)
         else:
-            reply_count = comment.css_first("[id='more-replies'] button")
+            reply_count = comment.select_one("[id='more-replies'] button")
             try:
-                reply_count = reply_count.attributes.get("aria-label")
+                reply_count = reply_count.get("aria-label")
             except Exception as ex:
                 logging.warning(f"Could not get aria-label for reply count: {ex}")
-                reply_count = reply_count.text()
+                reply_count = reply_count.get_text()
             replies_toggle = youtube_html_elements.replies_toggle(reply_count)
             comment_box += replies_toggle + divs
             output.write(comment_box)
             sleep(delay())
-            replies = comment.css('div[id="expander"] div[id="expander-contents"] #body')
+            replies = comment.select('div[id="expander"] div[id="expander-contents"] #body')
             print(f"[DEBUG] Found {len(replies)} replies for comment {comments_fetched}")
             for reply_index, reply in enumerate(replies, start=1):
                 try:
@@ -581,9 +581,9 @@ async def _add_comments_with_webdriver(
                     print(f"[WARNING] Skipping reply {reply_index} of comment {comments_fetched}: {error_msg}")
                     raw_text = ""
                     try:
-                        text_ele = reply.css_first('#content-text')
+                        text_ele = reply.select_one('#content-text')
                         if text_ele:
-                            raw_text = text_ele.text().strip()
+                            raw_text = text_ele.get_text().strip()
                     except Exception:
                         raw_text = "<could not extract text>"
                     failed_comments.append({
@@ -597,7 +597,7 @@ async def _add_comments_with_webdriver(
                         "timestamp": datetime.now(timezone.utc).isoformat()
                     })
                     continue
-                heart = reply.css_first('#creator-heart-button')
+                heart = reply.select_one('#creator-heart-button')
                 if heart:
                     heart = youtube_html_elements.heart(profile_image)
                 else:

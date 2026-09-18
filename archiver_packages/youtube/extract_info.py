@@ -1,8 +1,9 @@
-from selectolax.parser import HTMLParser
 from time import sleep
 from archiver_packages.utilities.nodriver_utils import slow_scroll, get_nodriver_tab
 from archiver_packages.utilities.file_utils import download_file
 from typing import Callable
+from bs4 import BeautifulSoup
+
 
 async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split_tabs: bool) -> tuple:
     """Scrape YouTube video info and profile image.
@@ -32,17 +33,18 @@ async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split
         pass
 
     driver_page_source = await tab.get_content()
-    html = HTMLParser(driver_page_source, detect_encoding=True)
-    profile_image_node = html.css_first('yt-img-shadow#avatar img')
-    profile_image = profile_image_node.attributes.get("src") if profile_image_node else ""
+    soup = BeautifulSoup(driver_page_source, 'html.parser')
+
+    profile_image_node = soup.select_one('yt-img-shadow#avatar img')
+    profile_image = profile_image_node.get("src") if profile_image_node else ""
     profile_image = profile_image.replace("s88-c-k", "s48-c-k") if profile_image else ""
 
     if not profile_image:
         print(f"Profile image not found for video: {yt_link}")
 
-    comments_count_ele = html.css_first('#comments')
+    comments_count_ele = soup.select_one('#comments')
     if comments_count_ele:
-        comments_count_ele_text = comments_count_ele.text()
+        comments_count_ele_text = comments_count_ele.get_text()
         if "Comments are turned off" in comments_count_ele_text:
             comments_status = False
         else:
