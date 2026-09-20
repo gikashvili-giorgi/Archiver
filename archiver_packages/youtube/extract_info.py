@@ -1,56 +1,103 @@
-from time import sleep
-from archiver_packages.utilities.nodriver_utils import slow_scroll, get_nodriver_tab
+import logging
+import yt_dlp
+
 from archiver_packages.utilities.file_utils import download_file
-from typing import Callable
-from bs4 import BeautifulSoup
 
 
-async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split_tabs: bool) -> tuple:
-    """Open the YouTube video and extract its profile image.
+_CHANNEL_AVATAR_IMAGE_CACHE: dict[str, str] = {}
+
+
+def get_channel_avatar_links(info: dict) -> tuple[str, str]:
+    """Extract a channel avatar URL with yt-dlp.
+
+    A video's metadata does not normally include the uploader avatar.  yt-dlp
+    exposes it when the video's channel URL is extracted separately.  The
+    result is cached so videos from the same channel do not trigger repeated
+    channel requests.
 
     Args:
-        driver: The web driver instance.
-        yt_link (str): The YouTube video link.
-        delay (Callable[[int], float]): A callable to introduce delay.
-        split_tabs (bool): Whether to split tabs.
-    """
-    tab = await get_nodriver_tab(
-        driver=driver,
-        url=yt_link,
-        delay=delay,
-        add_tab_delay=3,
-        split_tabs=split_tabs
-    )
+        info (dict): Video metadata returned by yt-dlp.
 
-    await slow_scroll(tab, delay)
-    sleep(delay() + 5)
+    Returns:
+        str: The channel avatar URL, or an empty string when unavailable.
+    """
+    channel_url = info.get("channel_url") or info.get("uploader_url")
+    if not channel_url:
+        logging.warning("Channel URL not found; cannot extract profile image.")
+        return ""
+
+    cache_key = str(info.get("channel_id") or channel_url)
+    if cache_key in _CHANNEL_AVATAR_IMAGE_CACHE:
+        return _CHANNEL_AVATAR_IMAGE_CACHE[cache_key]
+
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "playlist_items": "0",
+    }
 
     try:
-        profile_image_ele = await tab.select('yt-img-shadow#avatar')
-        await profile_image_ele.scroll_into_view()
-        sleep(delay() + 1)
-    except:
-        pass
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            channel_info = ydl.extract_info(channel_url, download=False)
+    except Exception as exc:
+        logging.warning("Could not extract channel profile image: %s", exc)
+        return ""
 
-    driver_page_source = await tab.get_content()
-    soup = BeautifulSoup(driver_page_source, 'html.parser')
+    thumbnails = channel_info.get("thumbnails") or []
+    channel_avatar_url = next(
+        (
+            thumbnail.get("url")
+            for thumbnail in thumbnails
+            if thumbnail.get("id") == "avatar_uncropped"
+            and thumbnail.get("url")
+        ),
+        "",
+    )
 
-    profile_image_node = soup.select_one('yt-img-shadow#avatar img')
-    profile_image = profile_image_node.get("src") if profile_image_node else ""
-    profile_image = profile_image.replace("s88-c-k", "s48-c-k") if profile_image else ""
+    if not channel_avatar_url:
+        channel_avatar_url = next(
+            (
+                thumbnail.get("url")
+                for thumbnail in thumbnails
+                if "avatar" in str(thumbnail.get("id", "")).lower()
+                and thumbnail.get("url")
+            ),
+            "",
+        )
 
-    if not profile_image:
-        print(f"Profile image not found for video: {yt_link}")
+    channel_avatar_url_full, channel_avatar_url_small = "", ""
 
-    return tab, profile_image
+    if channel_avatar_url:
+        channel_avatar_url = channel_avatar_url.split("=s")[0]
+        _CHANNEL_AVATAR_IMAGE_CACHE[cache_key] = channel_avatar_url
+    else:
+        logging.warning("Channel avatar URL not found for channel: %s", channel_url)
 
-def download_youtube_thumbnail(info: dict, save_path: str) -> None:
+    if channel_avatar_url:
+        channel_avatar_url_full = channel_avatar_url + "s0"
+        channel_avatar_url_small = channel_avatar_url + "=s48-c-k-c0x00ffffff-no-rj"
+
+    return channel_avatar_url_full, channel_avatar_url_small
+
+
+def download_youtube_thumbnail(thumbnail_url: str, save_path: str) -> None:
     """Download the YouTube video thumbnail if available.
 
     Args:
-        info (dict): The information dictionary containing the thumbnail URL.
+        thumbnail_url (str): The URL of the YouTube video thumbnail to download.
         save_path (str): The path to save the downloaded thumbnail.
     """
-    thumbnail_url = info.get('thumbnail')
     if thumbnail_url:
         download_file(thumbnail_url, save_path)
+
+
+def download_youtube_channel_avatar_image(youtube_channel_avatar_url: str, save_path: str) -> None:
+    """Download the YouTube channel avatar image.
+
+    Args:
+        youtube_channel_avatar_url (str): The URL of the YouTube channel avatar image to download.
+        save_path (str): The path to save the downloaded channel avatar image.
+    """
+    if youtube_channel_avatar_url:
+        download_file(youtube_channel_avatar_url, save_path)

@@ -82,27 +82,32 @@ async def archiver(
                     move_file(f_path, html_dir)
         files = files_updated
 
-    try:
-        driver = await nodriver_setup(profile, browser, headless)
-    except Exception as e:
-        logging.error(e)
-        if "only supports Chrome version" in str(e):
-            chrome_version_exception(str(e))
-        return
+    driver = None
+    if save_comments and webdriver_comment_extractor:
+        try:
+            driver = await nodriver_setup(profile, browser, headless)
+        except Exception as e:
+            logging.error(e)
+            if "only supports Chrome version" in str(e):
+                chrome_version_exception(str(e))
+            return
 
-    await parse_to_html(
-        output_directory,
-        yt_urls,
-        files,
-        info_list,
-        driver,
-        delay,
-        save_comments,
-        max_comments,
-        split_tabs,
-        webdriver_comment_extractor=webdriver_comment_extractor,
-    )
-    driver.stop()
+    try:
+        await parse_to_html(
+            output_directory,
+            yt_urls,
+            files,
+            info_list,
+            driver,
+            delay,
+            save_comments,
+            max_comments,
+            split_tabs,
+            webdriver_comment_extractor=webdriver_comment_extractor,
+        )
+    finally:
+        if driver is not None:
+            driver.stop()
     logging.info("Completed.")
 
 

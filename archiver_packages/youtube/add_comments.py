@@ -307,7 +307,7 @@ def _downloader_comment_html_text(text: str, is_reply: bool = False) -> str:
 async def add_comments_with_downloader(
     yt_url: str,
     output_directory: str,
-    profile_image: str,
+    profile_avatar_url: str,
     channel_author: str,
     output,
     max_comments: int,
@@ -346,7 +346,7 @@ async def add_comments_with_downloader(
         ]
 
         heart = (
-            youtube_html_elements.heart(profile_image)
+            youtube_html_elements.heart(profile_avatar_url)
             if comment_data["author_heart"]
             else ""
         )
@@ -371,7 +371,7 @@ async def add_comments_with_downloader(
 
         for reply, reply_data in zip(replies, comment_data["replies"]):
             reply_heart = (
-                youtube_html_elements.heart(profile_image)
+                youtube_html_elements.heart(profile_avatar_url)
                 if reply_data["author_heart"]
                 else ""
             )
@@ -437,7 +437,7 @@ async def expand_all_comments(tab: uc.Tab, delay: Callable[[int], float]):
 async def _add_comments_with_webdriver(
     tab,
     output_directory: str,
-    profile_image: str,
+    profile_avatar_url: str,
     comment_count: int,
     channel_author: str,
     output,
@@ -450,7 +450,7 @@ async def _add_comments_with_webdriver(
     Args:
         tab: The browser tab object.
         output_directory (str): Directory to save the output files.
-        profile_image (str): URL of the profile image.
+        profile_avatar_url (str): URL of the profile avatar.
         comment_count (int): Total number of comments expected.
         channel_author (str): Author of the channel.
         output: Output file object.
@@ -534,7 +534,7 @@ async def _add_comments_with_webdriver(
             continue
         heart = comment.select_one('#creator-heart-button')
         if heart:
-            heart = youtube_html_elements.heart(profile_image)
+            heart = youtube_html_elements.heart(profile_avatar_url)
         else:
             heart = ""
         comment_box = youtube_html_elements.comment_box(
@@ -599,7 +599,7 @@ async def _add_comments_with_webdriver(
                     continue
                 heart = reply.select_one('#creator-heart-button')
                 if heart:
-                    heart = youtube_html_elements.heart(profile_image)
+                    heart = youtube_html_elements.heart(profile_avatar_url)
                 else:
                     heart = ""
                 reply_box = youtube_html_elements.reply_box(
@@ -642,7 +642,7 @@ async def _add_comments_with_webdriver(
 async def add_comments(
     tab,
     output_directory: str,
-    profile_image: str,
+    profile_avatar_url: str,
     comment_count: int,
     channel_author: str,
     output,
@@ -656,7 +656,7 @@ async def add_comments(
         await _add_comments_with_webdriver(
             tab,
             output_directory,
-            profile_image,
+            profile_avatar_url,
             comment_count,
             channel_author,
             output,
@@ -671,7 +671,7 @@ async def add_comments(
     await add_comments_with_downloader(
         yt_url=yt_url,
         output_directory=output_directory,
-        profile_image=profile_image,
+        profile_avatar_url=profile_avatar_url,
         channel_author=channel_author,
         output=output,
         max_comments=max_comments,

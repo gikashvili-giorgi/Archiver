@@ -27,17 +27,17 @@ Save YouTube videos offline, complete with metadata, in an HTML interface that r
 ---
 
 ## How it Works
-Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading, [nodriver](https://github.com/ultrafunkamsterdam/nodriver) for browser automation, and [youtube-comment-downloader](https://github.com/egbertbouman/youtube-comment-downloader) for comments by default. The workflow:
+Archiver uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading and channel metadata, and [youtube-comment-downloader](https://github.com/egbertbouman/youtube-comment-downloader) for comments by default. [nodriver](https://github.com/ultrafunkamsterdam/nodriver) is only needed when the optional webdriver comment extractor is enabled. The workflow:
 
 1. **Download Videos:** Uses yt-dlp to fetch videos and metadata
-2. **Collect Metadata:** Gathers video info and channel details with nodriver, then extracts comments with the configured comment extractor
+2. **Collect Metadata:** Gathers video and channel details with yt-dlp, then extracts comments with the configured comment extractor
 3. **Generate HTML:** Compiles everything into a browsable HTML file with assets
 
 ---
 
 ## Prerequisites
 - Python 3.11+
-- Latest version of Google Chrome, Microsoft Edge, or Brave browser (required for nodriver automation)
+- Latest version of Google Chrome, Microsoft Edge, or Brave browser (required only for the optional nodriver comment extractor)
 
 ---
 

@@ -1,10 +1,15 @@
 import os, re
 import logging
 import traceback
-from archiver_packages.youtube.extract_info import scrape_info, download_youtube_thumbnail
+from archiver_packages.youtube.extract_info import (
+    download_youtube_thumbnail,
+    download_youtube_channel_avatar_image,
+    get_channel_avatar_links,
+)
 from archiver_packages.youtube.add_comments import add_comments
 from archiver_packages.utilities.utilities import convert_date_format
 from archiver_packages.utilities.file_utils import copy_file_or_directory
+from archiver_packages.utilities.nodriver_utils import get_nodriver_tab
 from archiver_packages.youtube.download_video import download_best_audio
 from typing import Callable
 import archiver_packages.youtube_html_elements as youtube_html_elements
@@ -152,7 +157,8 @@ async def parse_to_html(
         yt_urls (list[str]): List of YouTube URLs.
         files (list[str]): List of file paths.
         info_list (list[dict]): List of video information dictionaries.
-        driver: Web driver instance.
+        driver: Optional web driver instance. It is only used by the
+            webdriver comment extractor.
         delay (Callable[[int], float]): Delay function.
         save_comments (bool): Whether to save comments.
         max_comments (int): Maximum number of comments to save.
@@ -180,18 +186,35 @@ async def parse_to_html(
         comment_count = 0 if comment_count is None else comment_count
         comments_status = get_comments_status(info)
         video_id = info.get("id")
+        thumbnail_url = info.get('thumbnail')
+        # Get the HTML output directory for the video
         html_output_directory = get_html_output_dir(video_id, output_directory)
         if html_output_directory is None:
             logging.error(f"Skipping video {video_title} due to missing output directory.")
             continue
         try:
             # Download thumbnail
-            download_youtube_thumbnail(info, os.path.join(html_output_directory, f"{video_id}_thumbnail.jpg"))
+            download_youtube_thumbnail(thumbnail_url, os.path.join(html_output_directory, f"{video_id}_thumbnail.jpg"))
             with open("./archiver_packages/youtube_html/index.html", 'rt', encoding="utf8") as input_file, \
                  open(f"{html_output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
 
-                # Scrape additional info
-                tab, profile_image = await scrape_info(driver, yt_url, delay, split_tabs)
+                # Extract the channel avatar
+                channel_avatar_url_full, channel_avatar_url_small = get_channel_avatar_links(info)
+                # Download the channel avatar
+                download_youtube_channel_avatar_image(channel_avatar_url_full, os.path.join(html_output_directory, f"{video_id}_channel_avatar.jpg"))
+                tab = None
+                if save_comments and comments_status and webdriver_comment_extractor:
+                    if driver is None:
+                        raise RuntimeError(
+                            "A web driver is required for the webdriver comment extractor."
+                        )
+                    tab = await get_nodriver_tab(
+                        driver=driver,
+                        url=yt_url,
+                        delay=delay,
+                        add_tab_delay=3,
+                        split_tabs=split_tabs,
+                    )
 
                 # Modify extracted info
                 yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count_html_str = modify_exctracted_info(
@@ -208,7 +231,7 @@ async def parse_to_html(
                         .replace('CHANNEL_KEYWORDS', f'{channel_keywords}')
                         .replace('CHANNEL_DESCRIPTION', channel_description)
                         .replace('CHANNEL_SUBSCRIBERS', subscribers)
-                        .replace('PROFILE_IMAGE_LINK', profile_image)
+                        .replace('CHANNEL_AVATAR_URL', channel_avatar_url_small)
                         .replace('LIKE_COUNT', like_count)
                         .replace('DISLIKES_COUNT', dislike_count)
                         .replace('COMMENT_COUNT', comment_count_html_str)
@@ -218,7 +241,7 @@ async def parse_to_html(
                     await add_comments(
                         tab,
                         html_output_directory,
-                        profile_image,
+                        channel_avatar_url_small,
                         comment_count,
                         channel_author,
                         output_file,
