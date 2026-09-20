@@ -79,7 +79,9 @@ def download_videos_with_info(video_urls: list, output_directory: str, skip_down
         'writesubtitles': False,
         'writeautomaticsub': False,
         'writeinfojson': True,
-        'writecomments': True,
+        # The Python API uses getcomments. This also makes the returned info
+        # dictionary contain comments=None when comments are disabled.
+        'getcomments': True,
         'skip_download': skip_download,
         'merge_output_format': 'mp4',
         'outtmpl': f"{output_directory}/%(title)s [%(id)s].%(ext)s"

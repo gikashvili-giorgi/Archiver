@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 
 async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split_tabs: bool) -> tuple:
-    """Scrape YouTube video info and profile image.
+    """Open the YouTube video and extract its profile image.
 
     Args:
         driver: The web driver instance.
@@ -42,17 +42,7 @@ async def scrape_info(driver, yt_link: str, delay: Callable[[int], float], split
     if not profile_image:
         print(f"Profile image not found for video: {yt_link}")
 
-    comments_count_ele = soup.select_one('#comments')
-    if comments_count_ele:
-        comments_count_ele_text = comments_count_ele.get_text()
-        if "Comments are turned off" in comments_count_ele_text:
-            comments_status = False
-        else:
-            comments_status = True
-    else:
-        comments_status = True
-
-    return tab, profile_image, comments_status
+    return tab, profile_image
 
 def download_youtube_thumbnail(info: dict, save_path: str) -> None:
     """Download the YouTube video thumbnail if available.

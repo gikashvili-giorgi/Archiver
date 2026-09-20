@@ -10,6 +10,24 @@ from typing import Callable
 import archiver_packages.youtube_html_elements as youtube_html_elements
 
 
+def get_comments_status(info: dict) -> bool:
+    """Return whether yt-dlp found an available comments section.
+
+    yt-dlp returns ``comments=None`` and ``comment_count=None`` when its
+    comments extractor detects that comments are disabled.  An empty list is
+    a valid enabled state for a video with no comments, so it must not be
+    treated as disabled.
+    """
+    if "comments" not in info:
+        logging.warning(
+            "yt-dlp did not return comment extraction status; "
+            "falling back to comment_count."
+        )
+        return info.get("comment_count") is not None
+
+    return info["comments"] is not None
+
+
 def modify_exctracted_info(yt_url: str, video_publish_date: str, channel_keywords: list, channel_description: str, like_count: int | None, dislike_count: int | None, comment_count: int, comments_status: bool) -> tuple:
     """
     Modify extracted YouTube video information.
@@ -160,6 +178,7 @@ async def parse_to_html(
         dislike_count = info.get('dislike_count', None)
         comment_count = info.get('comment_count', None)
         comment_count = 0 if comment_count is None else comment_count
+        comments_status = get_comments_status(info)
         video_id = info.get("id")
         html_output_directory = get_html_output_dir(video_id, output_directory)
         if html_output_directory is None:
@@ -172,7 +191,7 @@ async def parse_to_html(
                  open(f"{html_output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
 
                 # Scrape additional info
-                tab, profile_image, comments_status = await scrape_info(driver, yt_url, delay, split_tabs)
+                tab, profile_image = await scrape_info(driver, yt_url, delay, split_tabs)
 
                 # Modify extracted info
                 yt_url, video_publish_date, channel_keywords, channel_description, like_count, dislike_count, comment_count_html_str = modify_exctracted_info(
@@ -195,7 +214,7 @@ async def parse_to_html(
                         .replace('COMMENT_COUNT', comment_count_html_str)
                         .replace('VIDEO_SOURCE', f'media-extracted/{filename}')
                     )
-                if save_comments:
+                if save_comments and comments_status:
                     await add_comments(
                         tab,
                         html_output_directory,
