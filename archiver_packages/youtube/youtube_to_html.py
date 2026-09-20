@@ -193,15 +193,30 @@ async def parse_to_html(
             logging.error(f"Skipping video {video_title} due to missing output directory.")
             continue
         try:
+            images_output_directory = os.path.join(
+                html_output_directory,
+                "images-extracted",
+            )
+            os.makedirs(images_output_directory, exist_ok=True)
+
             # Download thumbnail
-            download_youtube_thumbnail(thumbnail_url, os.path.join(html_output_directory, f"{video_id}_thumbnail.jpg"))
+            download_youtube_thumbnail(
+                thumbnail_url,
+                os.path.join(images_output_directory, f"{video_id}_thumbnail.jpg"),
+            )
             with open("./archiver_packages/youtube_html/index.html", 'rt', encoding="utf8") as input_file, \
                  open(f"{html_output_directory}/YouTube.html", 'wt', encoding="utf8") as output_file:
 
                 # Extract the channel avatar
                 channel_avatar_url_full, channel_avatar_url_small = get_channel_avatar_links(info)
                 # Download the channel avatar
-                download_youtube_channel_avatar_image(channel_avatar_url_full, os.path.join(html_output_directory, f"{video_id}_channel_avatar.jpg"))
+                download_youtube_channel_avatar_image(
+                    channel_avatar_url_full,
+                    os.path.join(
+                        images_output_directory,
+                        f"{video_id}_channel_avatar.jpg",
+                    ),
+                )
                 tab = None
                 if save_comments and comments_status and webdriver_comment_extractor:
                     if driver is None:
