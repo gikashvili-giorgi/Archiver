@@ -7,9 +7,11 @@
     },
     "extra": {
         "delay": 1,
-        "headless": true,
-        "split_tabs": false,
-        "profile": "Default",
-        "browser": "Edge"
+        "webdriver_settings": {
+            "headless": true,
+            "split_tabs": false,
+            "profile": "Default",
+            "browser": "Edge"
+        }
     }
 }

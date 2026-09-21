@@ -74,10 +74,10 @@ Edit `settings.json` to control Archiver's behavior:
 - `youtube > max_comments`: Maximum number of comments to save (e.g., `1000`); set to `0` to save all comments
 - `youtube > webdriver_comment_extractor`: `false` (default) uses `youtube-comment-downloader`; set to `true` to use the nodriver browser extractor
 - `extra > delay`: Delay (in seconds) between actions (default: `1`)
-- `extra > headless`: Run Browser in headless mode (`true`/`false`)
-- `extra > split_tabs`: Use separate tabs for each video (`true`/`false`)
-- `extra > profile`: Browser profile to use (default: `Default`)
-- `extra > browser`: Select your preferred browser for automation (`Edge`, `Chrome`, or `Brave`)
+- `extra > webdriver_settings > headless`: Run the browser in headless mode (`true`/`false`)
+- `extra > webdriver_settings > split_tabs`: Use separate tabs for each video (`true`/`false`)
+- `extra > webdriver_settings > profile`: Browser profile to use (default: `Default`)
+- `extra > webdriver_settings > browser`: Select your preferred browser for automation (`Edge`, `Chrome`, or `Brave`)
 
 **Note:**
 - The `headless` option may not work reliably on all systems.

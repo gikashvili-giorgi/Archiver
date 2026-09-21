@@ -121,10 +121,11 @@ if __name__ == "__main__":
     )
     download_playlist = settings["youtube"]["download_playlist"]
     delay = settings["extra"]["delay"]
-    headless = settings["extra"]["headless"]
-    split_tabs = settings["extra"]["split_tabs"]
-    profile = settings["extra"]["profile"]
-    browser = settings["extra"]["browser"]
+    webdriver_settings = settings["extra"]["webdriver_settings"]
+    headless = webdriver_settings["headless"]
+    split_tabs = webdriver_settings["split_tabs"]
+    profile = webdriver_settings["profile"]
+    browser = webdriver_settings["browser"]
 
     yt_urls = input_youtube_links(download_playlist)
     uc.loop().run_until_complete(
