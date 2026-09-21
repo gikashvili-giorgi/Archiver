@@ -4,7 +4,9 @@ import traceback
 from archiver_packages.youtube.extract_info import (
     download_youtube_thumbnail,
     download_youtube_channel_avatar_image,
+    download_youtube_channel_banner_image,
     get_channel_avatar_links,
+    get_channel_banner_link,
 )
 from archiver_packages.youtube.add_comments import add_comments
 from archiver_packages.utilities.utilities import convert_date_format
@@ -215,6 +217,15 @@ async def parse_to_html(
                     os.path.join(
                         images_output_directory,
                         f"{video_id}_channel_avatar.jpg",
+                    ),
+                )
+                # Extract and download the channel banner
+                channel_banner_url = get_channel_banner_link(info)
+                download_youtube_channel_banner_image(
+                    channel_banner_url,
+                    os.path.join(
+                        images_output_directory,
+                        f"{video_id}_channel_banner.jpg",
                     ),
                 )
                 tab = None
